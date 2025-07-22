@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { ImageIcon, Plus, Video } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription } from "../ui/dialog";
+import {Dialog, DialogContent, DialogDescription, DialogTitle} from "../ui/dialog";
 import { Button } from "../ui/button";
 import Image from "next/image";
 import ReactPlayer from "react-player";
@@ -162,6 +162,7 @@ const MediaImageDialog = ({ isOpen, onClose, selectedImage, isLoading, handleSen
 			}}
 		>
 			<DialogContent>
+				<DialogTitle>Media</ DialogTitle>
 				<DialogDescription className='flex flex-col gap-10 justify-center items-center'>
 					{renderedImage && <Image src={renderedImage} width={300} height={300} alt='selected image' />}
 					<Button className='w-full' disabled={isLoading} onClick={handleSendImage}>

@@ -1,13 +1,12 @@
 "use node";
 
-import type { WebhookEvent } from "@clerk/clerk-sdk-node";
-import { v } from "convex/values";
+import {v} from "convex/values";
 
-import { Webhook } from "svix";
+import {Webhook} from "svix";
 
-import { internalAction } from "./_generated/server";
+import {internalAction} from "./_generated/server";
 
-const WEB_HOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET as string;
+const WEB_HOOK_SECRET = process.env.CLERK_WEBHOOK_SIGNING_SECRET as string;
 
 export const fulfill = internalAction({
 	args: {
@@ -16,8 +15,7 @@ export const fulfill = internalAction({
 	},
 	handler: async (ctx, args) => {
 		const wh = new Webhook(WEB_HOOK_SECRET);
-		const payload = wh.verify(args.payload, args.headers) as WebhookEvent;
-		return payload;
+		return wh.verify(args.payload, args.headers) as any;
 	},
 });
 

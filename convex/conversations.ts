@@ -1,8 +1,9 @@
-import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import {ConvexError, v} from "convex/values";
+import {mutation, query} from "./_generated/server";
 
-export const createConversation = mutation({
+export const upsertConversation = mutation({
 	args: {
+		_id: v.optional(v.id("conversations")),
 		participants: v.array(v.id("users")),
 		isGroup: v.boolean(),
 		groupName: v.optional(v.string()),
@@ -13,21 +14,25 @@ export const createConversation = mutation({
 		const identity = await ctx.auth.getUserIdentity();
 		if (!identity) throw new ConvexError("Unauthorized");
 
-		// jane and john
-		// [jane, john]
-		// [john, jane]
-
 		const existingConversation = await ctx.db
 			.query("conversations")
 			.filter((q) =>
 				q.or(
 					q.eq(q.field("participants"), args.participants),
-					q.eq(q.field("participants"), args.participants.reverse())
+					q.eq(q.field("participants"), args.participants.reverse()),
+					q.eq(q.field("_id"), args._id)
 				)
 			)
 			.first();
 
 		if (existingConversation) {
+			await ctx.db.patch(existingConversation._id, {
+				groupName: args.groupName ? args.groupName : existingConversation.groupName,
+				isGroup: existingConversation.isGroup,
+				groupImage: existingConversation.groupImage,
+				admin: existingConversation.admin,
+			});
+
 			return existingConversation._id;
 		}
 
@@ -37,15 +42,37 @@ export const createConversation = mutation({
 			groupImage = (await ctx.storage.getUrl(args.groupImage)) as string;
 		}
 
-		const conversationId = await ctx.db.insert("conversations", {
+		return await ctx.db.insert("conversations", {
 			participants: args.participants,
 			isGroup: args.isGroup,
 			groupName: args.groupName,
 			groupImage,
 			admin: args.admin,
 		});
+	},
+});
 
-		return conversationId;
+export const addConversationParticipants = mutation({
+	args: {
+		_id: v.optional(v.id("conversations")),
+		participants: v.array(v.id("users"))
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new ConvexError("Unauthorized");
+
+		const conversation = await ctx.db
+			.query("conversations")
+			.filter((q) => q.eq(q.field("_id"), args._id))
+			.unique();
+
+		if (!conversation) throw new ConvexError("Conversation not found");
+
+		await ctx.db.patch(conversation._id, {
+			participants: args.participants,
+		});
+
+		return conversation._id;
 	},
 });
 
@@ -68,7 +95,7 @@ export const getMyConversations = query({
 			return conversation.participants.includes(user._id);
 		});
 
-		const conversationsWithDetails = await Promise.all(
+		return await Promise.all(
 			myConversations.map(async (conversation) => {
 				let userDetails = {};
 
@@ -96,8 +123,6 @@ export const getMyConversations = query({
 				};
 			})
 		);
-
-		return conversationsWithDetails;
 	},
 });
 
@@ -122,6 +147,26 @@ export const kickUser = mutation({
 		});
 	},
 });
+
+export const deleteConversation = mutation({
+	args: {
+		conversationId: v.id("conversations")
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new ConvexError("Unauthorized");
+
+		const conversation = await ctx.db
+			.query("conversations")
+			.filter((q) => q.eq(q.field("_id"), args.conversationId))
+			.unique();
+
+		if (!conversation) throw new ConvexError("Conversation not found");
+
+		await ctx.db.delete(args.conversationId);
+	},
+});
+
 
 export const generateUploadUrl = mutation(async (ctx) => {
 	return await ctx.storage.generateUploadUrl();

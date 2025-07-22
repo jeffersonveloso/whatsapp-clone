@@ -17,87 +17,52 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import toast from "react-hot-toast";
-import { useConversationStore } from "@/store/chat-store";
+import {Conversation, useConversationStore} from "@/store/chat-store";
+import {addConversationParticipants} from "../../../convex/conversations";
 
-const UserListDialog = () => {
+type UpdateGroupMembersDialogProps = {
+	selectedConversation: Conversation;
+};
+
+const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDialogProps) => {
+	const members = useQuery(api.users.getGroupMembers, { conversationId: selectedConversation._id });
+
 	const [selectedUsers, setSelectedUsers] = useState<Id<"users">[]>([]);
-	const [groupName, setGroupName] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const [selectedImage, setSelectedImage] = useState<File | null>(null);
-	const [renderedImage, setRenderedImage] = useState("");
 
-	const imgRef = useRef<HTMLInputElement>(null);
 	const dialogCloseRef = useRef<HTMLButtonElement>(null);
+	const addConversationParticipants = useMutation(api.conversations.addConversationParticipants);
 
-	const upsertConversation = useMutation(api.conversations.upsertConversation);
-	const generateUploadUrl = useMutation(api.conversations.generateUploadUrl);
 	const me = useQuery(api.users.getMe);
-	const users = useQuery(api.users.getUsers);
+	let users = useQuery(api.users.getUsers);
+	if(users && members) {
+		users = users.filter((entry) => !members.find((row) => row._id === entry._id));
+	}
 
 	const { setSelectedConversation } = useConversationStore();
 
-	const handleCreateConversation = async () => {
-		if (selectedUsers.length === 0) return;
+	const handleUpdateGroup = async () => {
+		if (!selectedConversation) return;
 		setIsLoading(true);
 		try {
-			const isGroup = selectedUsers.length > 1;
-
-			let conversationId;
-			if (!isGroup) {
-				conversationId = await upsertConversation({
-					participants: [...selectedUsers, me?._id!],
-					isGroup: false,
-				});
-			} else {
-				const postUrl = await generateUploadUrl();
-
-				const result = await fetch(postUrl, {
-					method: "POST",
-					headers: { "Content-Type": selectedImage?.type! },
-					body: selectedImage,
-				});
-
-				const { storageId } = await result.json();
-
-				conversationId = await upsertConversation({
-					participants: [...selectedUsers, me?._id!],
-					isGroup: true,
-					admin: me?._id!,
-					groupName,
-					groupImage: storageId,
-				});
-			}
-
 			dialogCloseRef.current?.click();
 			setSelectedUsers([]);
-			setGroupName("");
-			setSelectedImage(null);
-
-			// TODO => Update a global state called "selectedConversation"
-			const conversationName = isGroup ? groupName : users?.find((user) => user._id === selectedUsers[0])?.name;
+			await addConversationParticipants({
+				_id: selectedConversation._id,
+				participants: [...new Set(selectedConversation.participants.concat(selectedUsers))],
+			});
 
 			setSelectedConversation({
-				_id: conversationId,
-				participants: selectedUsers,
-				isGroup,
-				image: isGroup ? renderedImage : users?.find((user) => user._id === selectedUsers[0])?.image,
-				name: conversationName,
-				admin: me?._id!,
+				...selectedConversation,
+				participants: [...new Set(selectedConversation.participants.concat(selectedUsers))],
 			});
 		} catch (err) {
-			toast.error("Failed to create conversation");
+			toast.error("Failed to add members to the group.");
 			console.error(err);
 		} finally {
 			setIsLoading(false);
 		}
 	};
-
-	useEffect(() => {
-		if (!selectedImage) return setRenderedImage("");
-		const reader = new FileReader();
-		reader.onload = (e) => setRenderedImage(e.target?.result as string);
-		reader.readAsDataURL(selectedImage);
-	}, [selectedImage]);
 
 	return (
 		<Dialog>
@@ -111,33 +76,7 @@ const UserListDialog = () => {
 					<DialogTitle>Users</DialogTitle>
 				</DialogHeader>
 
-				<DialogDescription>Start a new chat</DialogDescription>
-				{renderedImage && (
-					<div className='w-16 h-16 relative mx-auto'>
-						<Image src={renderedImage} fill alt='user image' className='rounded-full object-cover' />
-					</div>
-				)}
-				{/* TODO: input file */}
-				<input
-					type='file'
-					accept='image/*'
-					ref={imgRef}
-					hidden
-					onChange={(e) => setSelectedImage(e.target.files![0])}
-				/>
-				{selectedUsers.length > 1 && (
-					<>
-						<Input
-							placeholder='Group Name'
-							value={groupName}
-							onChange={(e) => setGroupName(e.target.value)}
-						/>
-						<Button className='flex gap-2' onClick={() => imgRef.current?.click()}>
-							<ImageIcon size={20} />
-							Group Image
-						</Button>
-					</>
-				)}
+				<DialogDescription>Add members</DialogDescription>
 				<div className='flex flex-col gap-3 overflow-auto max-h-60'>
 					{users?.map((user) => (
 						<div
@@ -175,14 +114,14 @@ const UserListDialog = () => {
 				<div className='flex justify-between'>
 					<Button variant={"outline"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>
 					<Button
-						onClick={handleCreateConversation}
-						disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName) || isLoading}
+						onClick={handleUpdateGroup}
+						disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !selectedConversation.groupName) || isLoading}
 					>
 						{/* spinner */}
 						{isLoading ? (
 							<div className='w-5 h-5 border-t-2 border-b-2  rounded-full animate-spin' />
 						) : (
-							"Create"
+							"Add"
 						)}
 					</Button>
 				</div>
@@ -190,4 +129,4 @@ const UserListDialog = () => {
 		</Dialog>
 	);
 };
-export default UserListDialog;
+export default UpdateGroupMembersDialog;

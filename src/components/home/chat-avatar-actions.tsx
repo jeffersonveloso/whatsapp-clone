@@ -15,7 +15,7 @@ const ChatAvatarActions = ({ me, message }: ChatAvatarActionsProps) => {
 
 	const isMember = selectedConversation?.participants.includes(message.sender._id);
 	const kickUser = useMutation(api.conversations.kickUser);
-	const createConversation = useMutation(api.conversations.createConversation);
+	const upsertConversation = useMutation(api.conversations.upsertConversation);
 	const fromAI = message.sender?.name === "ChatGPT";
 	const isGroup = selectedConversation?.isGroup;
 
@@ -23,6 +23,7 @@ const ChatAvatarActions = ({ me, message }: ChatAvatarActionsProps) => {
 		if (fromAI) return;
 		e.stopPropagation();
 		if (!selectedConversation) return;
+
 		try {
 			await kickUser({
 				conversationId: selectedConversation._id,
@@ -42,7 +43,7 @@ const ChatAvatarActions = ({ me, message }: ChatAvatarActionsProps) => {
 		if (fromAI) return;
 
 		try {
-			const conversationId = await createConversation({
+			const conversationId = await upsertConversation({
 				isGroup: false,
 				participants: [me._id, message.sender._id],
 			});

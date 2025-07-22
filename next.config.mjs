@@ -2,7 +2,7 @@
 const nextConfig = {
 	images: {
 		remotePatterns: [
-			{ hostname: "valiant-partridge-243.convex.cloud" },
+			{ hostname: "next-capybara-584.convex.cloud" },
 			{ hostname: "oaidalleapiprodscus.blob.core.windows.net" },
 		],
 	},

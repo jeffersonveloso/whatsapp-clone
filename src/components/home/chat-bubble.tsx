@@ -4,7 +4,7 @@ import ChatBubbleAvatar from "./chat-bubble-avatar";
 import DateIndicator from "./date-indicator";
 import Image from "next/image";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription } from "../ui/dialog";
+import {Dialog, DialogContent, DialogDescription, DialogTitle} from "../ui/dialog";
 import ReactPlayer from "react-player";
 import ChatAvatarActions from "./chat-avatar-actions";
 import { Bot } from "lucide-react";
@@ -28,7 +28,6 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 	const fromAI = message.sender?.name === "ChatGPT";
 	const bgClass = fromMe ? "bg-green-chat" : !fromAI ? "bg-white dark:bg-gray-primary" : "bg-blue-500 text-white";
 
-	console.log(message.sender);
 	const [open, setOpen] = useState(false);
 
 	const renderMessageContent = () => {
@@ -39,6 +38,8 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 				return <ImageMessage message={message} handleClick={() => setOpen(true)} />;
 			case "video":
 				return <VideoMessage message={message} />;
+			case "audio":
+				return <AudioMessage message={message} />;
 			default:
 				return null;
 		}
@@ -50,7 +51,7 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 				<DateIndicator message={message} previousMessage={previousMessage} />
 				<div className='flex gap-1 w-2/3'>
 					<ChatBubbleAvatar isGroup={isGroup} isMember={isMember} message={message} fromAI={fromAI} />
-					<div className={`flex flex-col z-20 max-w-fit px-2 pt-1 rounded-md shadow-md relative ${bgClass}`}>
+					<div className={`flex flex-col z-20 max-w-fit px-2 p-1 rounded-md shadow-md relative ${bgClass}`}>
 						{!fromAI && <OtherMessageIndicator />}
 						{fromAI && <Bot size={16} className='absolute bottom-[2px] left-2' />}
 						{<ChatAvatarActions message={message} me={me} />}
@@ -68,7 +69,7 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 			<DateIndicator message={message} previousMessage={previousMessage} />
 
 			<div className='flex gap-1 w-2/3 ml-auto'>
-				<div className={`flex  z-20 max-w-fit px-2 pt-1 rounded-md shadow-md ml-auto relative ${bgClass}`}>
+				<div className={`flex  z-20 max-w-fit px-2 p-1 rounded-md shadow-md ml-auto relative m-2 ${bgClass}`}>
 					<SelfMessageIndicator />
 					{renderMessageContent()}
 					{open && <ImageDialog src={message.content} open={open} onClose={() => setOpen(false)} />}
@@ -81,7 +82,32 @@ const ChatBubble = ({ me, message, previousMessage }: ChatBubbleProps) => {
 export default ChatBubble;
 
 const VideoMessage = ({ message }: { message: IMessage }) => {
-	return <ReactPlayer url={message.content} width='250px' height='250px' controls={true} light={true} />;
+	return <ReactPlayer
+		url={message.content}
+		width='250px'
+		height='250px'
+		controls={true} light={true}
+		config={{
+			file: {
+				attributes: {
+					controlsList: "nodownload",               // esconde o botão de download
+					onContextMenu: (e: React.MouseEvent) => { // bloqueia o menu de contexto
+						e.preventDefault();
+					},
+				},
+			},
+		}}
+	/>;
+};
+
+const AudioMessage = ({ message }: { message: IMessage }) => {
+	return <audio src={message.content}
+				  preload={"auto"}
+				  controls
+				  controlsList="nodownload"          // esconde o botão de download
+				  onContextMenu={(e) => e.preventDefault()} // bloqueia o clique direito
+				  style={{ width: "250px", height: "50px", outline: "none" }}
+	/>;
 };
 
 const ImageMessage = ({ message, handleClick }: { message: IMessage; handleClick: () => void }) => {
@@ -107,6 +133,7 @@ const ImageDialog = ({ src, onClose, open }: { open: boolean; src: string; onClo
 			}}
 		>
 			<DialogContent className='min-w-[750px]'>
+				<DialogTitle/>
 				<DialogDescription className='relative h-[450px] flex justify-center'>
 					<Image src={src} fill className='rounded-lg object-contain' alt='image' />
 				</DialogDescription>

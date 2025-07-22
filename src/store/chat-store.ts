@@ -33,7 +33,7 @@ export interface IMessage {
 	_id: string;
 	content: string;
 	_creationTime: number;
-	messageType: "text" | "image" | "video";
+	messageType: "text" | "image" | "video" | "audio";
 	sender: {
 		_id: Id<"users">;
 		image: string;

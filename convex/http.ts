@@ -46,6 +46,11 @@ http.route({
 						tokenIdentifier: `${process.env.CLERK_APP_DOMAIN}|${result.data.user_id}`,
 					});
 					break;
+				case "session.removed":
+					await ctx.runMutation(internal.users.setUserOffline, {
+						tokenIdentifier: `${process.env.CLERK_APP_DOMAIN}|${result.data.user_id}`,
+					});
+					break;
 			}
 
 			return new Response(null, {
