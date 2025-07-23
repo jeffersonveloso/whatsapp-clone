@@ -33,7 +33,6 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 	const dialogCloseRef = useRef<HTMLButtonElement>(null);
 	const addConversationParticipants = useMutation(api.conversations.addConversationParticipants);
 
-	const me = useQuery(api.users.getMe);
 	let users = useQuery(api.users.getUsers);
 	if(users && members) {
 		users = users.filter((entry) => !members.find((row) => row._id === entry._id));

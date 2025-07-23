@@ -1,6 +1,13 @@
 import {IMessage, useConversationStore} from "@/store/chat-store";
 import {useMutation} from "convex/react";
-import {Ban, LogOut, MessageSquareDiff, MoreVertical, Trash} from "lucide-react";
+import {
+    Ban,
+    ChevronDown,
+    Info,
+    LogOut,
+    MessageSquareDiff,
+    Trash, TriangleAlert
+} from "lucide-react";
 import toast from "react-hot-toast";
 import {api} from "../../../convex/_generated/api";
 import React from "react";
@@ -21,6 +28,8 @@ const MessageOptionsMenu = ({me, message}: ChatAvatarActionsProps) => {
 
     const fromAI = message.sender?.name === "ChatGPT";
     const isGroup = selectedConversation?.isGroup;
+
+    const canDelete = isGroup ? selectedConversation?.admins?.includes(me._id) || message.sender._id === me._id : message.sender._id === me._id;
 
     const handleKickUser = async (e: React.MouseEvent) => {
         if (fromAI) return;
@@ -86,11 +95,22 @@ const MessageOptionsMenu = ({me, message}: ChatAvatarActionsProps) => {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <button className="p-2 hover:bg-gray-200 rounded-full">
-                        <MoreVertical size={18}/>
+                        <ChevronDown size={15}/>
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="right" align="end" className="min-w-[180px]">
-                    {isGroup && (selectedConversation?.admins?.includes(me._id) || message.sender._id === me._id) && (
+                    <DropdownMenuItem onClick={handleKickUser} disabled={true}>
+                        <TriangleAlert size={16} className="mr-2"/>
+                        Actions
+                    </DropdownMenuItem>
+
+                    {isGroup && message.sender._id != me._id && (
+                        <DropdownMenuItem onClick={handleCreateConversation}>
+                            <MessageSquareDiff size={16} className="mr-2"/>
+                            Private chat
+                        </DropdownMenuItem>
+                    )}
+                    {canDelete && (
                         <DropdownMenuItem className="text-red-600" onClick={handleDeleteMessage}>
                             <Trash size={16} className="mr-2"/>
                             Delete message
@@ -100,12 +120,6 @@ const MessageOptionsMenu = ({me, message}: ChatAvatarActionsProps) => {
                         <DropdownMenuItem className="text-red-600" onClick={handleKickUser}>
                             <LogOut size={16} className="mr-2"/>
                             Remove user
-                        </DropdownMenuItem>
-                    )}
-                    {isGroup && message.sender._id != me._id && (
-                        <DropdownMenuItem onClick={handleCreateConversation}>
-                            <MessageSquareDiff size={16} className="mr-2"/>
-                            Private chat
                         </DropdownMenuItem>
                     )}
                 </DropdownMenuContent>

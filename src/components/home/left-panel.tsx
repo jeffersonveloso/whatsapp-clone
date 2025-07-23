@@ -6,34 +6,14 @@ import Conversation from "./conversation";
 import { UserButton } from "@clerk/nextjs";
 
 import UserListDialog from "./user-list-dialog";
-import {useConvexAuth, useMutation, useQuery} from "convex/react";
+import {useConvexAuth, useQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useEffect } from "react";
 import { useConversationStore } from "@/store/chat-store";
-import {Id} from "../../../convex/_generated/dataModel";
 
 const LeftPanel = () => {
 	const { isAuthenticated, isLoading } = useConvexAuth();
 	const conversations = useQuery(api.conversations.getMyConversations, isAuthenticated ? undefined : "skip");
-
-	// 1) Injete aqui todas as mutations
-	//const archiveMut   = useMutation(api.conversations.archive);
-	//const muteMut      = useMutation(api.conversations.toggleMute);
-	//const pinMut       = useMutation(api.conversations.togglePin);
-	//const unreadMut    = useMutation(api.conversations.markUnread);
-	//const favMut       = useMutation(api.conversations.toggleFavorite);
-	const exitGroupMut = useMutation(api.conversations.kickUser);
-	const deleteConversation = useMutation(api.conversations.deleteConversation);
-
-	// 2) Defina os handlers que recebem a conversa e disparam a mutation
-	//const handleArchive        = async (c: any) => { await archiveMut({ conversationId: c._id }); };
-	//const handleToggleMute     = async (c: any) => { await muteMut   ({ conversationId: c._id }); };
-	//const handleTogglePin      = async (c: any) => { await pinMut    ({ conversationId: c._id }); };
-	//const handleMarkUnread     = async (c: any) => { await unreadMut ({ conversationId: c._id }); };
-	//const handleToggleFavorite = async (c: any) => { await favMut    ({ conversationId: c._id }); };
-	const handleExitGroup      = async (conversationId: Id<"conversations">, userId: Id<"users">) => { await exitGroupMut({ conversationId, userId }); };
-	const handleDeleteConversation      = async (conversationId: Id<"conversations">) => { await deleteConversation({ conversationId }); };
-
 	const { selectedConversation, setSelectedConversation } = useConversationStore();
 
 	useEffect(() => {
@@ -81,8 +61,6 @@ const LeftPanel = () => {
 					<Conversation
 						key={conversation._id}
 						conversation={conversation}
-						onExitGroup={handleExitGroup}
-						onDeleteConversation={handleDeleteConversation}
 					/>
 				))}
 

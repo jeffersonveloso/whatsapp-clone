@@ -10,14 +10,10 @@ import {Id} from "../../../convex/_generated/dataModel";
 
 type ConversationProps = {
 	conversation: any;
-	onExitGroup: (conversationId: Id<"conversations">, userId: Id<"users">) => void;
-	onDeleteConversation: (conversationId: Id<"conversations">) => void;
 };
 
 const Conversation = ({
-						  conversation,
-						  onExitGroup,
-						  onDeleteConversation
+						  conversation
 }: ConversationProps) => {
 	const conversationImage = conversation.groupImage || conversation.image;
 	const conversationName = conversation.groupName || conversation.name;
@@ -71,8 +67,6 @@ const Conversation = ({
 				<ChatOptionsMenu
 					conversation={conversation}
 					me={me}
-					onExitGroup={() => onExitGroup(conversation._id, me ? me?._id : "" as Id<"users">)}
-					onDeleteConversation={() => onDeleteConversation(conversation._id)}
 				/>
 			</div>
 			<hr className='h-[1px] mx-10 bg-gray-primary' />

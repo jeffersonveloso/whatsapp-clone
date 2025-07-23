@@ -25,21 +25,21 @@ export const upsertConversation = mutation({
 			)
 			.first();
 
-		if (existingConversation) {
-			await ctx.db.patch(existingConversation._id, {
-				groupName: args.groupName ? args.groupName : existingConversation.groupName,
-				isGroup: existingConversation.isGroup,
-				groupImage: existingConversation.groupImage,
-				admins: existingConversation.admins,
-			});
-
-			return existingConversation._id;
-		}
-
 		let groupImage;
 
 		if (args.groupImage) {
 			groupImage = (await ctx.storage.getUrl(args.groupImage)) as string;
+		}
+
+		if (existingConversation) {
+			await ctx.db.patch(existingConversation._id, {
+				groupName: args.groupName ? args.groupName : existingConversation.groupName,
+				isGroup: existingConversation.isGroup,
+				groupImage: groupImage ? groupImage : existingConversation.groupImage,
+				admins: existingConversation.admins,
+			});
+
+			return existingConversation._id;
 		}
 
 		return await ctx.db.insert("conversations", {
