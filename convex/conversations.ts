@@ -8,7 +8,7 @@ export const upsertConversation = mutation({
 		isGroup: v.boolean(),
 		groupName: v.optional(v.string()),
 		groupImage: v.optional(v.id("_storage")),
-		admin: v.optional(v.id("users")),
+		admins: v.optional(v.array(v.id("users"))),
 	},
 	handler: async (ctx, args) => {
 		const identity = await ctx.auth.getUserIdentity();
@@ -30,7 +30,7 @@ export const upsertConversation = mutation({
 				groupName: args.groupName ? args.groupName : existingConversation.groupName,
 				isGroup: existingConversation.isGroup,
 				groupImage: existingConversation.groupImage,
-				admin: existingConversation.admin,
+				admins: existingConversation.admins,
 			});
 
 			return existingConversation._id;
@@ -47,7 +47,7 @@ export const upsertConversation = mutation({
 			isGroup: args.isGroup,
 			groupName: args.groupName,
 			groupImage,
-			admin: args.admin,
+			admins: args.admins,
 		});
 	},
 });

@@ -15,7 +15,7 @@ export default defineSchema({
 		isGroup: v.boolean(),
 		groupName: v.optional(v.string()),
 		groupImage: v.optional(v.string()),
-		admin: v.optional(v.id("users")),
+		admins: v.optional(v.array(v.id("users"))),
 	}),
 
 	messages: defineTable({

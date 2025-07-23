@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -62,7 +62,7 @@ const UserListDialog = () => {
 				conversationId = await upsertConversation({
 					participants: [...selectedUsers, me?._id!],
 					isGroup: true,
-					admin: me?._id!,
+					admins: [me?._id!],
 					groupName,
 					groupImage: storageId,
 				});
@@ -82,7 +82,7 @@ const UserListDialog = () => {
 				isGroup,
 				image: isGroup ? renderedImage : users?.find((user) => user._id === selectedUsers[0])?.image,
 				name: conversationName,
-				admin: me?._id!,
+				admins: [me?._id!],
 			});
 		} catch (err) {
 			toast.error("Failed to create conversation");
@@ -102,7 +102,7 @@ const UserListDialog = () => {
 	return (
 		<Dialog>
 			<DialogTrigger>
-				<MessageSquareDiff size={20} />
+				<p className='text-xs text-muted-foreground text-left flex items-center space-x-1'>New Chat <MessageSquareDiff size={16}/></p>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>

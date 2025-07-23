@@ -1,12 +1,24 @@
 import { formatDate } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { MessageSeenSvg } from "@/lib/svgs";
-import { ImageIcon, Users, VideoIcon } from "lucide-react";
-import { useQuery } from "convex/react";
+import {ImageIcon, Mic, Users, VideoIcon} from "lucide-react";
+import {useQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useConversationStore } from "@/store/chat-store";
+import ChatOptionsMenu from "@/components/home/chat-options-menu";
+import {Id} from "../../../convex/_generated/dataModel";
 
-const Conversation = ({ conversation }: { conversation: any }) => {
+type ConversationProps = {
+	conversation: any;
+	onExitGroup: (conversationId: Id<"conversations">, userId: Id<"users">) => void;
+	onDeleteConversation: (conversationId: Id<"conversations">) => void;
+};
+
+const Conversation = ({
+						  conversation,
+						  onExitGroup,
+						  onDeleteConversation
+}: ConversationProps) => {
 	const conversationImage = conversation.groupImage || conversation.image;
 	const conversationName = conversation.groupName || conversation.name;
 	const lastMessage = conversation.lastMessage;
@@ -53,8 +65,15 @@ const Conversation = ({ conversation }: { conversation: any }) => {
 						) : null}
 						{lastMessageType === "image" && <ImageIcon size={16} />}
 						{lastMessageType === "video" && <VideoIcon size={16} />}
+						{lastMessageType === "audio" && <Mic size={16} />}
 					</p>
 				</div>
+				<ChatOptionsMenu
+					conversation={conversation}
+					me={me}
+					onExitGroup={() => onExitGroup(conversation._id, me ? me?._id : "" as Id<"users">)}
+					onDeleteConversation={() => onDeleteConversation(conversation._id)}
+				/>
 			</div>
 			<hr className='h-[1px] mx-10 bg-gray-primary' />
 		</>

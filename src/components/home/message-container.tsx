@@ -1,5 +1,5 @@
 import ChatBubble from "./chat-bubble";
-import { useQuery } from "convex/react";
+import {useQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useConversationStore } from "@/store/chat-store";
 import { useEffect, useRef } from "react";
@@ -23,7 +23,11 @@ const MessageContainer = () => {
 			<div className='mx-12 flex flex-col gap-3'>
 				{messages?.map((msg, idx) => (
 					<div key={msg._id} ref={lastMessageRef}>
-						<ChatBubble message={msg} me={me} previousMessage={idx > 0 ? messages[idx - 1] : undefined} />
+						<ChatBubble
+							message={msg}
+							me={me}
+							previousMessage={idx > 0 ? messages[idx - 1] : undefined}
+						/>
 					</div>
 				))}
 			</div>

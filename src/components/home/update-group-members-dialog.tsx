@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -67,7 +67,7 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 	return (
 		<Dialog>
 			<DialogTrigger>
-				<MessageSquareDiff size={20} />
+				<p className='text-xs text-muted-foreground text-left flex items-center space-x-1'>Add members <MessageSquareDiff size={16}/></p>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
@@ -76,7 +76,7 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 					<DialogTitle>Users</DialogTitle>
 				</DialogHeader>
 
-				<DialogDescription>Add members</DialogDescription>
+				<DialogDescription>Add new members to the group</DialogDescription>
 				<div className='flex flex-col gap-3 overflow-auto max-h-60'>
 					{users?.map((user) => (
 						<div

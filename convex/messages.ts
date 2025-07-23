@@ -180,6 +180,25 @@ export const sendAudio = mutation({
 	},
 });
 
+export const deleteMessage = mutation({
+	args: {
+		messageId: v.id("messages")
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new ConvexError("Unauthorized");
+
+		const conversation = await ctx.db
+			.query("messages")
+			.filter((q) => q.eq(q.field("_id"), args.messageId))
+			.unique();
+
+		if (!conversation) throw new ConvexError("Message not found");
+
+		await ctx.db.delete(args.messageId);
+	},
+});
+
 // unoptimized
 
 // export const getMessages = query({

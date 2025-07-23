@@ -9,7 +9,7 @@ export type Conversation = {
 	name?: string;
 	groupImage?: string;
 	groupName?: string;
-	admin?: Id<"users">;
+	admins?: Id<"users">[];
 	isOnline?: boolean;
 	lastMessage?: {
 		_id: Id<"messages">;
@@ -30,7 +30,7 @@ export const useConversationStore = create<ConversationStore>((set) => ({
 }));
 
 export interface IMessage {
-	_id: string;
+	_id: Id<"messages">;
 	content: string;
 	_creationTime: number;
 	messageType: "text" | "image" | "video" | "audio";
