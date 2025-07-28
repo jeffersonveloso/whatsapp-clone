@@ -14,10 +14,14 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { ImageIcon, MessageSquareDiff } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
+import {useMutation, usePaginatedQuery, useQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import toast from "react-hot-toast";
 import { useConversationStore } from "@/store/chat-store";
+import SearchBar from "@/components/home/search-bar";
+import useDebounce from "@/hooks/useDebouce";
+
+const PAGE_SIZE = 30;
 
 const UserListDialog = () => {
 	const [selectedUsers, setSelectedUsers] = useState<Id<"users">[]>([]);
@@ -25,6 +29,10 @@ const UserListDialog = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [selectedImage, setSelectedImage] = useState<File | null>(null);
 	const [renderedImage, setRenderedImage] = useState("");
+	const [searchParam, setSearchParam] = useState("");
+
+	// debounce com 1000ms de espera
+	const searchText = useDebounce(searchParam, 1000);
 
 	const imgRef = useRef<HTMLInputElement>(null);
 	const dialogCloseRef = useRef<HTMLButtonElement>(null);
@@ -32,7 +40,16 @@ const UserListDialog = () => {
 	const upsertConversation = useMutation(api.conversations.upsertConversation);
 	const generateUploadUrl = useMutation(api.conversations.generateUploadUrl);
 	const me = useQuery(api.users.getMe);
-	const users = useQuery(api.users.getUsers);
+
+	// pesquisa e infinite query
+	const { results, status, loadMore } = usePaginatedQuery(
+		api.users.pagedUsers, // Your paginated query function
+		{search: searchText}, // Any additional arguments for your query, e.g., { category: "books" }
+		{ initialNumItems: PAGE_SIZE } // Initial number of items to load
+	);
+
+	// Achata todas as páginas em um array só
+	const users = results?.flatMap((p) => p) ?? [];
 
 	const { setSelectedConversation } = useConversationStore();
 
@@ -99,6 +116,23 @@ const UserListDialog = () => {
 		reader.readAsDataURL(selectedImage);
 	}, [selectedImage]);
 
+	// handler do input
+	const handleSearchChange = (value: string) => {
+		setSearchParam(value);
+	};
+
+	// infinite scroll usando status e loadMore
+	const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+		const el = e.currentTarget;
+		if (
+			el.scrollHeight - el.scrollTop <= el.clientHeight + 50 &&
+			status === "CanLoadMore"
+		) {
+			loadMore(PAGE_SIZE);
+		}
+	};
+
+
 	return (
 		<Dialog>
 			<DialogTrigger>
@@ -138,11 +172,23 @@ const UserListDialog = () => {
 						</Button>
 					</>
 				)}
-				<div className='flex flex-col gap-3 overflow-auto max-h-60'>
+
+				{/* Input de pesquisa */}
+				<SearchBar
+					placeholder="Buscar usuários…"
+					filterText={searchParam}
+					onFilterTextChange={handleSearchChange}
+					className="relative h-10 mx-3 flex-1"
+				/>
+
+				<div
+					className='flex flex-col gap-3 overflow-auto max-h-60 border-2 rounded-md bg-gray-100'
+					onScroll={handleScroll}
+				>
 					{users?.map((user) => (
 						<div
 							key={user._id}
-							className={`flex gap-3 items-center p-2 rounded cursor-pointer active:scale-95 
+							className={`flex gap-3 items-center p-1 m-1 border-b-2 cursor-pointer active:scale-95 
 								transition-all ease-in-out duration-300
 							${selectedUsers.includes(user._id) ? "bg-green-primary" : ""}`}
 							onClick={() => {
@@ -171,6 +217,12 @@ const UserListDialog = () => {
 							</div>
 						</div>
 					))}
+
+					{status === "LoadingMore" && (
+						<p className="text-center text-sm text-muted-foreground py-2">
+							Carregando…
+						</p>
+					)}
 				</div>
 				<div className='flex justify-between'>
 					<Button variant={"outline"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>

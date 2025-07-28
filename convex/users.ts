@@ -1,5 +1,6 @@
-import { ConvexError, v } from "convex/values";
-import { internalMutation, query } from "./_generated/server";
+import {ConvexError, v} from "convex/values";
+import {internalMutation, query} from "./_generated/server";
+import {paginationOptsValidator} from "convex/server";
 
 export const createUser = internalMutation({
 	args: {
@@ -84,6 +85,39 @@ export const getUsers = query({
 	},
 });
 
+
+export const pagedUsers = query({
+	args: {
+		search:  v.optional(v.string()),
+		paginationOpts: paginationOptsValidator,
+	},
+	handler: async (ctx, { search, paginationOpts }) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		const excludeMe = (q: any) =>
+			q.neq(q.field("tokenIdentifier"), identity.tokenIdentifier);
+
+		if (search && search.trim() !== "") {
+			const searchParam = `"${search.trim()}"`;
+
+			return await ctx.db
+				.query("users")
+				.withSearchIndex("userSearchName", (b) => b.search("name", searchParam)) // full-text pelo índice name :contentReference[oaicite:0]{index=0}
+				.filter(excludeMe)
+				.paginate(paginationOpts);
+		}
+
+		return await ctx.db.query("users")
+			.filter(excludeMe)
+			//.withIndex("by_name")
+			//.order("asc")
+			.paginate(paginationOpts);
+	},
+});
+
 export const getMe = query({
 	args: {},
 	handler: async (ctx, args) => {
@@ -123,8 +157,6 @@ export const getGroupMembers = query({
 		}
 
 		const users = await ctx.db.query("users").collect();
-		const groupMembers = users.filter((user) => conversation.participants.includes(user._id));
-
-		return groupMembers;
+		return users.filter((user) => conversation.participants.includes(user._id));
 	},
 });
