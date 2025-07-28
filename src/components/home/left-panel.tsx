@@ -8,8 +8,9 @@ import { UserButton } from "@clerk/nextjs";
 import UserListDialog from "./user-list-dialog";
 import {useConvexAuth, useQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useConversationStore } from "@/store/chat-store";
+import SearchBar from "@/components/home/search-bar";
 
 const LeftPanel = () => {
 	const { isAuthenticated, isLoading } = useConvexAuth();
@@ -39,17 +40,12 @@ const LeftPanel = () => {
 				</div>
 				<div className='p-3 flex items-center'>
 					{/* Search */}
-					<div className='relative h-10 mx-3 flex-1'>
-						<Search
-							className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10'
-							size={18}
-						/>
-						<Input
-							type='text'
-							placeholder='Search or start a new chat'
-							className='pl-10 py-2 text-sm w-full rounded shadow-sm bg-gray-primary focus-visible:ring-transparent'
-						/>
-					</div>
+					<SearchBar
+						placeholder='Search or start a new chat'
+						filterText=""
+						onFilterTextChange={() => {}}
+						className="relative h-10 mx-3 flex-1"
+					/>
 					<ListFilter className='cursor-pointer' />
 				</div>
 			</div>

@@ -163,6 +163,7 @@ const UserListDialog = () => {
 					<>
 						<Input
 							placeholder='Group Name'
+							className='pl-2 py-2 text-sm w-full rounded shadow-sm bg-gray-primary focus-visible:ring-transparent'
 							value={groupName}
 							onChange={(e) => setGroupName(e.target.value)}
 						/>
@@ -173,9 +174,9 @@ const UserListDialog = () => {
 					</>
 				)}
 
-				{/* Input de pesquisa */}
+				{/* Search */}
 				<SearchBar
-					placeholder="Buscar usuários…"
+					placeholder="Search users…"
 					filterText={searchParam}
 					onFilterTextChange={handleSearchChange}
 					className="relative h-10 mx-3 flex-1"

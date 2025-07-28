@@ -7,7 +7,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import {Avatar, AvatarFallback, AvatarImage} from "../ui/avatar";
-import {Crown, LogOut} from "lucide-react";
+import {Crown, EllipsisVertical, LogOut, Menu, TriangleAlert} from "lucide-react";
 import {Conversation, useConversationStore} from "@/store/chat-store";
 import {useMutation, useQuery} from "convex/react";
 import {api} from "../../../convex/_generated/api";
@@ -16,7 +16,14 @@ import React from "react";
 import toast from "react-hot-toast";
 import {Id} from "../../../convex/_generated/dataModel";
 import {Button} from "@/components/ui/button";
-import {upsertConversation} from "../../../convex/conversations";
+
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 type GroupMembersDialogProps = {
     selectedConversation: Conversation;
@@ -79,52 +86,82 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
                 <DialogHeader>
                     <DialogTitle className='my-2'>Current Members</DialogTitle>
                     <DialogDescription asChild>
-                        <div className='flex flex-col gap-3 '>
+                        <div>
                             {selectedConversation?.admins?.includes(me?._id as Id<"users">) &&
-                                (<UpdateGroupMembersDialog selectedConversation={selectedConversation}/>)
-                            }
-
-                            {users?.map((user) => (
-                                <div key={user._id} className={`flex gap-3 items-center p-2 rounded`}>
-                                    <Avatar className='overflow-visible'>
-                                        {user.isOnline && (
-                                            <div
-                                                className='absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-foreground'/>
-                                        )}
-                                        <AvatarImage src={user.image} className='rounded-full object-cover'/>
-                                        <AvatarFallback>
-                                            <div
-                                                className='animate-pulse bg-gray-tertiary w-full h-full rounded-full'></div>
-                                        </AvatarFallback>
-                                    </Avatar>
-
-                                    <div className='w-full '>
-                                        <div className='flex items-center gap-2'>
-                                            <h3 className='text-md font-medium'>
-                                                {/* johndoe@gmail.com */}
-                                                {user.name || user?.email?.split("@")[0]}
-                                            </h3>
-                                            {selectedConversation?.admins?.includes(user._id) && (
-                                                <Crown size={16} className='text-yellow-500'/>
-                                            )}
-                                            {selectedConversation?.admins?.includes(me?._id as Id<"users">) && user._id != me?._id && (
-                                                <Button variant={"destructive"} size={"sm"}
-                                                        onClick={(e) => handleKickUser(e, user._id)}>
-                                                    <LogOut size={16}/> Remove user
-                                                </Button>
-                                            )}
-                                            {selectedConversation?.admins?.includes(me?._id as Id<"users">) && user._id != me?._id && (
-                                                <Button
-                                                    variant={selectedConversation?.admins?.includes(user._id) ? "destructive" : "default"}
-                                                    size={"sm"}
-                                                    onClick={(e) => handleNewAdmins(e, user._id, !selectedConversation?.admins?.includes(user._id))}>
-                                                    {!selectedConversation?.admins?.includes(user._id) ? "Promote to admin" : "Dismiss as admin"}
-                                                </Button>
-                                            )}
-                                        </div>
+                                (<div className='flex flex-col gap-3 items-end py-3'>
+                                        <UpdateGroupMembersDialog selectedConversation={selectedConversation}/>
                                     </div>
-                                </div>
-                            ))}
+                                )}
+
+                            <div className='flex flex-col gap-3 overflow-auto max-h-60 border-2 rounded-md bg-gray-100'>
+                                {users?.map((user) => (
+                                    <div key={user._id} className={`flex gap-3 items-center p-2 border-b-2 rounded`}>
+                                        <Avatar className='overflow-visible'>
+                                            {user.isOnline && (
+                                                <div
+                                                    className='absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-foreground'/>
+                                            )}
+                                            <AvatarImage src={user.image} className='rounded-full object-cover'/>
+                                            <AvatarFallback>
+                                                <div
+                                                    className='animate-pulse bg-gray-tertiary w-full h-full rounded-full'></div>
+                                            </AvatarFallback>
+                                        </Avatar>
+
+                                        <div className='w-full '>
+                                            <div className='flex items-center gap-5'>
+                                                <h3 className='text-md font-medium'>
+                                                    {/* johndoe@gmail.com */}
+                                                    {user.name || user?.email?.split("@")[0]}
+                                                </h3>
+                                                {selectedConversation?.admins?.includes(user._id) && (
+                                                    <Crown size={16} className='text-yellow-500'/>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {selectedConversation?.admins?.includes(me?._id as Id<"users">) && user._id != me?._id && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button className="p-2 hover:bg-gray-200 rounded-full">
+                                                        <EllipsisVertical size={15}/>
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent side="right" align="end" className="min-w-[180px]">
+                                                    <DropdownMenuItem disabled={true}>
+                                                        <TriangleAlert size={16} className="mr-2"/>
+                                                        Actions
+                                                    </DropdownMenuItem>
+                                                    {selectedConversation?.admins?.includes(me?._id as Id<"users">) && user._id != me?._id && (
+                                                        <>
+                                                            <DropdownMenuSeparator/>
+                                                            <DropdownMenuItem
+                                                                className='text-red-600'
+                                                                onClick={(e) => handleKickUser(e, user._id)}>
+                                                                <LogOut size={16}/> Remove user
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
+                                                    {selectedConversation?.admins?.includes(me?._id as Id<"users">) && user._id != me?._id && (
+                                                        <>
+                                                            <DropdownMenuSeparator/>
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => handleNewAdmins(e, user._id, !selectedConversation?.admins?.includes(user._id))}
+                                                                className={selectedConversation?.admins?.includes(user._id) ? 'text-red-500' : ''}
+                                                            >
+                                                                {!selectedConversation?.admins?.includes(user._id) ?
+                                                                    (<> Promote to admin <Crown size={16} className='text-yellow-500'/> </>) :
+                                                                    "Dismiss as admin"
+                                                                }
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </DialogDescription>
                 </DialogHeader>
