@@ -2,6 +2,7 @@ import {ConvexError, v} from "convex/values";
 import {mutation, query} from "./_generated/server";
 import {api} from "./_generated/api";
 import {Id} from "./_generated/dataModel";
+import {SystemIndexes} from "convex/server";
 
 export const sendTextMessage = mutation({
     args: {
@@ -233,6 +234,47 @@ export const DestroyMessage = mutation({
         await ctx.db.delete(args.messageId);
     },
 });
+
+export const clearOldMessages = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+        const batchSize = 500;
+
+        // Loop para continuar apagando lotes de até batchSize
+        while (true) {
+            const oldBatch = await ctx.db
+                .query("messages")
+                .withIndex("by_creation_time", (q) => q.lt("_creationTime", cutoff))
+                .take(batchSize);
+
+            if (oldBatch.length === 0) {
+                // não há mais mensagens antigas
+                break;
+            }
+
+            const filesId: (Id<"_storage"> | undefined)[] = oldBatch.map((entry) => {
+                switch (entry.messageType) {
+                    case "text":
+                        return;
+                    default:
+                        return entry.content.substring(entry.content.lastIndexOf("/") + 1) as  Id<"_storage">;
+                }
+            }).filter(Boolean);
+
+            // exclui todo o lote em paralelo
+            await Promise.allSettled(oldBatch.map((msg) => ctx.db.delete(msg._id)));
+            await Promise.allSettled(filesId.map((fileId) => ctx.storage.delete(fileId as Id<"_storage">)));
+
+            // se veio menos que batchSize, já era — terminou
+            if (oldBatch.length < batchSize) {
+                break;
+            }
+            // senão, loop continua pra próximo lote
+        }
+    },
+});
+
 // unoptimized
 
 // export const getMessages = query({
