@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import {deleteUser, setUserOffline} from "./users";
 
 const http = httpRouter();
 
@@ -34,6 +35,12 @@ http.route({
 					await ctx.runMutation(internal.users.updateUser, {
 						tokenIdentifier: `${process.env.CLERK_APP_DOMAIN}|${result.data.id}`,
 						image: result.data.image_url,
+						name: `${result.data.first_name ?? "Guest"} ${result.data.last_name ?? ""}`,
+					});
+					break;
+				case "user.deleted":
+					await ctx.runMutation(internal.users.deleteUser, {
+						tokenIdentifier: `${process.env.CLERK_APP_DOMAIN}|${result.data.id}`,
 					});
 					break;
 				case "session.created":

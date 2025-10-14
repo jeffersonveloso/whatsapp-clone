@@ -241,7 +241,6 @@ export const clearOldMessages = mutation({
         const cutoff = Date.now() - 24 * 60 * 60 * 1000;
         const batchSize = 500;
 
-        // Loop para continuar apagando lotes de até batchSize
         while (true) {
             const oldBatch = await ctx.db
                 .query("messages")
@@ -249,7 +248,6 @@ export const clearOldMessages = mutation({
                 .take(batchSize);
 
             if (oldBatch.length === 0) {
-                // não há mais mensagens antigas
                 break;
             }
 
@@ -262,15 +260,12 @@ export const clearOldMessages = mutation({
                 }
             }).filter(Boolean);
 
-            // exclui todo o lote em paralelo
             await Promise.allSettled(oldBatch.map((msg) => ctx.db.delete(msg._id)));
             await Promise.allSettled(filesId.map((fileId) => ctx.storage.delete(fileId as Id<"_storage">)));
 
-            // se veio menos que batchSize, já era — terminou
             if (oldBatch.length < batchSize) {
                 break;
             }
-            // senão, loop continua pra próximo lote
         }
     },
 });

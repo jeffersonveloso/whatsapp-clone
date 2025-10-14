@@ -6,15 +6,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Crown, EllipsisVertical, LogOut, TriangleAlert } from "lucide-react";
-import { Conversation, useConversationStore } from "@/store/chat-store";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import {Avatar, AvatarFallback, AvatarImage} from "../ui/avatar";
+import {Crown, EllipsisVertical, LogOut, TriangleAlert} from "lucide-react";
+import {Conversation, useConversationStore} from "@/store/chat-store";
+import {useMutation, useQuery} from "convex/react";
+import {api} from "../../../convex/_generated/api";
 import UpdateGroupMembersDialog from "@/components/home/update-group-members-dialog";
-import React, { useMemo, useState, useEffect } from "react";
+import React, {useMemo, useState, useEffect} from "react";
 import toast from "react-hot-toast";
-import { Id } from "../../../convex/_generated/dataModel";
+import {Id} from "../../../convex/_generated/dataModel";
 
 import {
     DropdownMenu,
@@ -30,9 +30,9 @@ type GroupMembersDialogProps = {
     selectedConversation: Conversation;
 };
 
-const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) => {
+const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => {
     const me = useQuery(api.users.getMe);
-    const users = useQuery(api.users.getGroupMembers, { conversationId: selectedConversation._id });
+    const users = useQuery(api.users.getGroupMembers, {conversationId: selectedConversation._id});
     const [searchParam, setSearchParam] = useState("");
 
     // debounce com 1000ms de espera
@@ -40,7 +40,7 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
 
     const kickUser = useMutation(api.conversations.kickUser);
     const upsertConversation = useMutation(api.conversations.upsertConversation);
-    const { setSelectedConversation } = useConversationStore();
+    const {setSelectedConversation} = useConversationStore();
 
     const itemsPerPage = 5;
     const [currentPage, setCurrentPage] = useState(1);
@@ -77,7 +77,7 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
         e.stopPropagation();
         if (!selectedConversation) return;
         try {
-            await kickUser({ conversationId: selectedConversation._id, userId });
+            await kickUser({conversationId: selectedConversation._id, userId});
             setSelectedConversation({
                 ...selectedConversation,
                 participants: selectedConversation.participants.filter((id) => id !== userId),
@@ -108,7 +108,7 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
                 admins: newAdmins,
                 participants: selectedConversation.participants,
             });
-            setSelectedConversation({ ...selectedConversation, admins: newAdmins });
+            setSelectedConversation({...selectedConversation, admins: newAdmins});
         } catch {
             toast.error(`Failed to ${promote ? "promote" : "dismiss"} user as admin`);
         }
@@ -135,17 +135,19 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
                         <div>
                             {selectedConversation?.admins?.includes(me?._id as Id<"users">) && (
                                 <div className="flex flex-col gap-3 items-end py-3">
-                                    <UpdateGroupMembersDialog selectedConversation={selectedConversation} />
+                                    <UpdateGroupMembersDialog selectedConversation={selectedConversation}/>
                                 </div>
                             )}
 
                             {/* Search */}
-                            <SearchBar
-                                placeholder="Search users…"
-                                filterText={searchParam}
-                                onFilterTextChange={handleSearchChange}
-                                className="relative h-10 mx-3 flex-1"
-                            />
+                            <div className="px-3">
+                                <SearchBar
+                                    placeholder="Search members…"
+                                    filterText={searchParam}
+                                    onFilterTextChange={handleSearchChange}
+                                    className="relative h-10 mx-3 flex-1"
+                                />
+                            </div>
 
                             <div
                                 className="flex flex-col gap-3 overflow-auto max-h-60 border-2 rounded-md bg-gray-100"
@@ -155,11 +157,13 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
                                     <div key={user._id} className="flex gap-3 items-center p-2 border-b-2 rounded">
                                         <Avatar className="overflow-visible">
                                             {user.isOnline && (
-                                                <div className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-foreground" />
+                                                <div
+                                                    className="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full border-2 border-foreground"/>
                                             )}
-                                            <AvatarImage src={user.image} className="rounded-full object-cover" />
+                                            <AvatarImage src={user.image} className="rounded-full object-cover"/>
                                             <AvatarFallback>
-                                                <div className="animate-pulse bg-gray-tertiary w-full h-full rounded-full" />
+                                                <div
+                                                    className="animate-pulse bg-gray-tertiary w-full h-full rounded-full"/>
                                             </AvatarFallback>
                                         </Avatar>
 
@@ -169,7 +173,7 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
                                                     {user.name || user?.email?.split("@")[0]}
                                                 </h3>
                                                 {selectedConversation?.admins?.includes(user._id) && (
-                                                    <Crown size={16} className="text-yellow-500" />
+                                                    <Crown size={16} className="text-yellow-500"/>
                                                 )}
                                             </div>
                                         </div>
@@ -179,7 +183,7 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <button className="p-2 hover:bg-gray-200 rounded-full">
-                                                            <EllipsisVertical size={15} />
+                                                            <EllipsisVertical size={15}/>
                                                         </button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent
@@ -188,17 +192,17 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
                                                         className="min-w-[180px]"
                                                     >
                                                         <DropdownMenuItem disabled>
-                                                            <TriangleAlert size={16} className="mr-2" />
+                                                            <TriangleAlert size={16} className="mr-2"/>
                                                             Actions
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuSeparator/>
                                                         <DropdownMenuItem
                                                             className="text-red-600"
                                                             onClick={(e) => handleKickUser(e, user._id)}
                                                         >
-                                                            <LogOut size={16} /> Remove user
+                                                            <LogOut size={16}/> Remove user
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuSeparator/>
                                                         <DropdownMenuItem
                                                             onClick={(e) =>
                                                                 handleNewAdmins(
@@ -217,7 +221,7 @@ const GroupMembersDialog = ({ selectedConversation }: GroupMembersDialogProps) =
                                                                 ? (
                                                                     <>
                                                                         Promote to admin{" "}
-                                                                        <Crown size={16} className="text-yellow-500" />
+                                                                        <Crown size={16} className="text-yellow-500"/>
                                                                     </>
                                                                 )
                                                                 : "Dismiss as admin"}
