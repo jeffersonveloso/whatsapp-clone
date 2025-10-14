@@ -7,8 +7,8 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import {Avatar, AvatarFallback, AvatarImage} from "../ui/avatar";
-import {Crown, EllipsisVertical, LogOut, TriangleAlert} from "lucide-react";
-import {Conversation, useConversationStore} from "@/store/chat-store";
+import {Crown, EllipsisVertical, LogOut, MessageSquareDiff, TriangleAlert} from "lucide-react";
+import {Conversation, IMessage, useConversationStore} from "@/store/chat-store";
 import {useMutation, useQuery} from "convex/react";
 import {api} from "../../../convex/_generated/api";
 import UpdateGroupMembersDialog from "@/components/home/update-group-members-dialog";
@@ -114,6 +114,30 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
         }
     };
 
+    const handleCreateConversation = async (e: React.MouseEvent, user: any) => {
+        try {
+            e.stopPropagation();
+            if (!selectedConversation) return;
+
+            const conversationId = await upsertConversation({
+                isGroup: false,
+                participants: [me._id, user._id],
+            });
+
+            setSelectedConversation({
+                _id: conversationId,
+                name: user.name,
+                participants: [me._id, user._id],
+                isGroup: false,
+                isOnline: user.isOnline,
+                image: user.image,
+            });
+        } catch (error) {
+            console.log(error);
+            toast.error("Failed to create conversation");
+        }
+    };
+
     // handler do input
     const handleSearchChange = (value: string) => {
         setSearchParam(value);
@@ -179,7 +203,7 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
                                         </div>
 
                                         {selectedConversation?.admins?.includes(me?._id as Id<"users">) &&
-                                            user._id !== me?._id && (
+                                            user._id !== me?._id ? (
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <button className="p-2 hover:bg-gray-200 rounded-full">
@@ -195,12 +219,12 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
                                                             <TriangleAlert size={16} className="mr-2"/>
                                                             Actions
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuSeparator/>
-                                                        <DropdownMenuItem
-                                                            className="text-red-600"
-                                                            onClick={(e) => handleKickUser(e, user._id)}
+                                                         <DropdownMenuSeparator/>
+                                                         <DropdownMenuItem
+                                                            onClick={(e) => handleCreateConversation(e, user)}
                                                         >
-                                                            <LogOut size={16}/> Remove user
+                                                            <MessageSquareDiff size={16} className="mr-2"/>Private chat
+                                                        
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator/>
                                                         <DropdownMenuItem
@@ -226,9 +250,39 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
                                                                 )
                                                                 : "Dismiss as admin"}
                                                         </DropdownMenuItem>
+                                                        <DropdownMenuSeparator/>
+                                                        <DropdownMenuItem
+                                                            className="text-red-600"
+                                                            onClick={(e) => handleKickUser(e, user._id)}
+                                                        >
+                                                            <LogOut size={16}/> Remove user
+                                                        </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
-                                            )}
+                                            ):  (<DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <button className="p-2 hover:bg-gray-200 rounded-full">
+                                                            <EllipsisVertical size={15}/>
+                                                        </button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        side="right"
+                                                        align="end"
+                                                        className="min-w-[180px]"
+                                                    >
+                                                        <DropdownMenuItem disabled>
+                                                            <TriangleAlert size={16} className="mr-2"/>
+                                                            Actions
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator/>
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => handleCreateConversation(e, user)}
+                                                        >
+                                                            <MessageSquareDiff size={16} className="mr-2"/>Private chat
+                                                        
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>)}
                                     </div>
                                 ))}
                             </div>
