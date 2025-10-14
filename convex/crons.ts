@@ -7,7 +7,7 @@ const crons = cronJobs();
 // aqui roda toda hora; se quiser acelerar, use { minutes: 5 } ou até { minutes: 1 }
 crons.interval(
     "Clean old messages",
-    { hours: 1 },
+    { hours: 12 },
    api.messages.clearOldMessages
 );
 

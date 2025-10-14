@@ -1,6 +1,7 @@
 import {ConvexError, v} from "convex/values";
 import {internalMutation, query} from "./_generated/server";
 import {paginationOptsValidator} from "convex/server";
+import {UserRole} from "../types/roles";
 
 export const createUser = internalMutation({
 	args: {
@@ -16,6 +17,7 @@ export const createUser = internalMutation({
 			name: args.name,
 			image: args.image,
 			isOnline: true,
+			role: UserRole.Common,
 		});
 	},
 });

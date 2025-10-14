@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import { useConversationStore } from "@/store/chat-store";
 import SearchBar from "@/components/home/search-bar";
 import useDebounce from "@/hooks/useDebouce";
+import {UserRole} from "../../../types/roles";
 
 const PAGE_SIZE = 30;
 
@@ -40,6 +41,7 @@ const UserListDialog = () => {
 	const upsertConversation = useMutation(api.conversations.upsertConversation);
 	const generateUploadUrl = useMutation(api.conversations.generateUploadUrl);
 	const me = useQuery(api.users.getMe);
+	const isAdmin = me?.role === UserRole.Admin;
 
 	// pesquisa e infinite query
 	const { results, status, loadMore } = usePaginatedQuery(
@@ -59,6 +61,11 @@ const UserListDialog = () => {
 		try {
 			const isGroup = selectedUsers.length > 1;
 
+			if (isGroup && !isAdmin) {
+				toast.error("Only admins can create group chats.");
+				return;
+			}
+
 			let conversationId;
 			if (!isGroup) {
 				conversationId = await upsertConversation({
@@ -66,22 +73,25 @@ const UserListDialog = () => {
 					isGroup: false,
 				});
 			} else {
-				const postUrl = await generateUploadUrl();
+				let uploadedImageId;
+				if (selectedImage) {
+					const postUrl = await generateUploadUrl();
+					const result = await fetch(postUrl, {
+						method: "POST",
+						headers: { "Content-Type": selectedImage.type },
+						body: selectedImage,
+					});
 
-				const result = await fetch(postUrl, {
-					method: "POST",
-					headers: { "Content-Type": selectedImage?.type! },
-					body: selectedImage,
-				});
-
-				const { storageId } = await result.json();
+					const uploadResponse = await result.json();
+					uploadedImageId = uploadResponse.storageId;
+				}
 
 				conversationId = await upsertConversation({
 					participants: [...selectedUsers, me?._id!],
 					isGroup: true,
 					admins: [me?._id!],
 					groupName,
-					groupImage: storageId,
+					groupImage: uploadedImageId,
 				});
 			}
 
@@ -159,7 +169,7 @@ const UserListDialog = () => {
 					hidden
 					onChange={(e) => setSelectedImage(e.target.files![0])}
 				/>
-				{selectedUsers.length > 1 && (
+				{selectedUsers.length > 1 && isAdmin && (
 					<>
 						<Input
 							placeholder='Group Name'
@@ -193,6 +203,10 @@ const UserListDialog = () => {
 								transition-all ease-in-out duration-300
 							${selectedUsers.includes(user._id) ? "bg-green-primary" : ""}`}
 							onClick={() => {
+								if (!isAdmin && !selectedUsers.includes(user._id) && selectedUsers.length >= 1) {
+									toast.error("Only admins can create group chats.");
+									return;
+								}
 								if (selectedUsers.includes(user._id)) {
 									setSelectedUsers(selectedUsers.filter((id) => id !== user._id));
 								} else {
@@ -229,7 +243,11 @@ const UserListDialog = () => {
 					<Button variant={"outline"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>
 					<Button
 						onClick={handleCreateConversation}
-						disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !groupName) || isLoading}
+						disabled={
+							selectedUsers.length === 0 ||
+							(selectedUsers.length > 1 && (!groupName || !isAdmin)) ||
+							isLoading
+						}
 					>
 						{/* spinner */}
 						{isLoading ? (

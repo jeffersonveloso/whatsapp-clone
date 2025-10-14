@@ -2,8 +2,6 @@ import {ConvexError, v} from "convex/values";
 import {mutation, query} from "./_generated/server";
 import {api} from "./_generated/api";
 import {Id} from "./_generated/dataModel";
-import {SystemIndexes} from "convex/server";
-
 export const sendTextMessage = mutation({
     args: {
         sender: v.string(),
@@ -138,6 +136,7 @@ export const sendImage = mutation({
             sender: args.sender,
             messageType: "image",
             conversation: args.conversation,
+            storageId: args.imgId,
         });
     },
 });
@@ -157,6 +156,7 @@ export const sendVideo = mutation({
             sender: args.sender,
             messageType: "video",
             conversation: args.conversation,
+            storageId: args.videoId,
         });
     },
 });
@@ -176,6 +176,7 @@ export const sendAudio = mutation({
             sender: args.sender,
             messageType: "audio",
             conversation: args.conversation,
+            storageId: args.audioId,
         });
     },
 });
@@ -195,23 +196,16 @@ export const deleteMessage = mutation({
 
         if (!message) throw new ConvexError("Message not found");
 
-        let storageId: Id<"_storage"> | null;
-        switch (message.messageType) {
-            case "text":
-                storageId = null;
-                break;
-            default:
-                storageId = message.content.substring(message.content.lastIndexOf("/") + 1) as  Id<"_storage">;
-                break;
-        }
+        const storageId = message.storageId;
 
-        if(storageId) {
+        if (storageId) {
             await ctx.storage.delete(storageId);
         }
 
         await ctx.db.patch(args.messageId, {
             messageType: "text",
-            content: "This message was deleted"
+            content: "This message was deleted",
+            storageId: undefined,
         });
     },
 });
@@ -251,17 +245,12 @@ export const clearOldMessages = mutation({
                 break;
             }
 
-            const filesId: (Id<"_storage"> | undefined)[] = oldBatch.map((entry) => {
-                switch (entry.messageType) {
-                    case "text":
-                        return;
-                    default:
-                        return entry.content.substring(entry.content.lastIndexOf("/") + 1) as  Id<"_storage">;
-                }
-            }).filter(Boolean);
+            const filesId = oldBatch
+                .map((entry) => entry.storageId)
+                .filter((id): id is Id<"_storage"> => Boolean(id));
 
             await Promise.allSettled(oldBatch.map((msg) => ctx.db.delete(msg._id)));
-            await Promise.allSettled(filesId.map((fileId) => ctx.storage.delete(fileId as Id<"_storage">)));
+            await Promise.allSettled(filesId.map((fileId) => ctx.storage.delete(fileId)));
 
             if (oldBatch.length < batchSize) {
                 break;

@@ -1,5 +1,6 @@
 import {defineSchema, defineTable} from "convex/server";
 import {v} from "convex/values";
+import {UserRole} from "../types/roles";
 
 export default defineSchema({
     users: defineTable({
@@ -8,6 +9,7 @@ export default defineSchema({
         image: v.string(),
         tokenIdentifier: v.string(),
         isOnline: v.boolean(),
+        role: v.union(v.literal(UserRole.Common), v.literal(UserRole.Admin)),
     }).index("by_tokenIdentifier", ["tokenIdentifier"])
         .index("by_name", ["name"])
         .searchIndex("userSearchName", {
@@ -30,5 +32,7 @@ export default defineSchema({
         sender: v.string(), // should be string so that it doesn't throw errors in openai part ("ChatGPT")
         content: v.string(),
         messageType: v.union(v.literal("text"), v.literal("image"), v.literal("video"), v.literal("audio")),
-    }).index("by_conversation", ["conversation"])
+        storageId: v.optional(v.id("_storage")),
+    })
+        .index("by_conversation", ["conversation"])
 });
