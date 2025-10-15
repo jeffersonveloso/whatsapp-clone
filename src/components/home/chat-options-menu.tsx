@@ -75,11 +75,18 @@ const ChatOptionsMenu: React.FC<ChatOptionsMenuProps> = ({
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="p-2 hover:bg-gray-200 rounded-full">
+                    <button
+                        className="p-2 hover:bg-gray-200 rounded-full"
+                        data-chat-options-trigger
+                    >
                         <ChevronDown size={15}/>
                     </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="right" align="end" className="min-w-[180px]">
+                <DropdownMenuContent
+                    side="right"
+                    align="end"
+                    className="z-[90] min-w-[180px]"
+                >
                     {conversation.isGroup &&
                         !conversation.admins?.includes(me._id) && (
                             <DropdownMenuItem
