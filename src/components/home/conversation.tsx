@@ -10,10 +10,12 @@ import {Id} from "../../../convex/_generated/dataModel";
 
 type ConversationProps = {
 	conversation: any;
+	onSelect?: () => void;
 };
 
 const Conversation = ({
-						  conversation
+	conversation,
+	onSelect,
 }: ConversationProps) => {
 	const conversationImage = conversation.groupImage || conversation.image;
 	const conversationName = conversation.groupName || conversation.name;
@@ -30,7 +32,10 @@ const Conversation = ({
 				className={`flex gap-2 items-center p-3 hover:bg-chat-hover cursor-pointer
 					${activeBgClass ? "bg-gray-tertiary" : ""}
 				`}
-				onClick={() => setSelectedConversation(conversation)}
+				onClick={() => {
+					setSelectedConversation(conversation);
+					onSelect?.();
+				}}
 			>
 				<Avatar className='border border-gray-900 overflow-visible relative'>
 					{conversation.isOnline && (
