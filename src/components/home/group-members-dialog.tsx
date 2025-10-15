@@ -156,7 +156,7 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
             <DialogTrigger>
                 <p className="text-xs text-muted-foreground text-left">Click here for group info</p>
             </DialogTrigger>
-            <DialogContent className="w-full !max-w-4xl">
+            <DialogContent className="w-full !max-w-[95vw] sm:!max-w-4xl p-2">
                 <div className="flex max-h-[80vh] flex-col gap-4 overflow-hidden">
                     <DialogHeader>
                         <DialogClose ref={dialogCloseRef} />

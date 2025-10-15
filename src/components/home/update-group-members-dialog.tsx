@@ -97,7 +97,7 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 			<DialogTrigger>
 				<p className='text-xs text-muted-foreground text-left flex items-center space-x-1'>Add members <MessageSquareDiff size={16}/></p>
 			</DialogTrigger>
-			<DialogContent className="w-full !max-w-[90vw] sm:!max-w-4xl">
+			<DialogContent className="w-full !max-w-[90vw] sm:!max-w-4xl p-2">
 					<div className="flex max-h-[80vh] flex-col gap-4 overflow-hidden">
 						<DialogHeader>
 							{/* TODO: <DialogClose /> will be here */}

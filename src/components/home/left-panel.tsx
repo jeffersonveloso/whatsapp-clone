@@ -94,17 +94,29 @@ const LeftPanel = () => {
 		<>
 			<div className='hidden flex-shrink-0 md:flex md:h-full md:w-1/4 md:max-w-sm'>{sidebarBody}</div>
 
-			{!isDesktop && isSidebarOpen ? (
-				<div className='fixed inset-0 z-[70] flex md:hidden'>
-					<div className='relative z-[80] w-[80%] max-w-xs h-full shadow-lg'>{sidebarBody}</div>
+			{!isDesktop && (
+				<div
+					className={`fixed inset-0 z-[70] flex md:hidden transition-opacity duration-200 ${
+						isSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+					}`}
+				>
+					<div
+						className={`relative z-[80] w-[80%] max-w-xs h-full shadow-lg transition-transform duration-200 ${
+							isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+						}`}
+					>
+						{sidebarBody}
+					</div>
 					<button
 						type='button'
-						className='flex-1 bg-black/40'
+						className={`flex-1 bg-black/40 transition-opacity duration-200 ${
+							isSidebarOpen ? "opacity-100" : "opacity-0"
+						}`}
 						onClick={close}
 						aria-label='Close conversations backdrop'
 					/>
 				</div>
-			) : null}
+			)}
 		</>
 	);
 };

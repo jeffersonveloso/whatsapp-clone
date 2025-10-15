@@ -41,8 +41,8 @@ const ChatOptionsMenu: React.FC<ChatOptionsMenuProps> = ({
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const canDelete = !conversation.isGroup
-        ? conversation.participants?.includes(me._id)
-        : conversation.admins?.includes(me._id);
+        ? conversation.participants?.includes(me?._id)
+        : conversation.admins?.includes(me?._id);
 
     const handleExitGroup = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -88,7 +88,7 @@ const ChatOptionsMenu: React.FC<ChatOptionsMenuProps> = ({
                     className="z-[90] min-w-[180px]"
                 >
                     {conversation.isGroup &&
-                        !conversation.admins?.includes(me._id) && (
+                        !conversation.admins?.includes(me?._id) && (
                             <DropdownMenuItem
                                 onClick={handleExitGroup}
                                 className="text-red-600"

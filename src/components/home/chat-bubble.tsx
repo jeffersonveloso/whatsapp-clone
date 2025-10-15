@@ -45,17 +45,28 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
         }
     };
 
+    const isMediaMessage = message.messageType !== "text";
+    const bubbleWidthClass = isMediaMessage
+        ? "w-full"
+        : "w-fit max-w-[80vw] sm:max-w-[360px] lg:max-w-[420px]";
+    const messageBody = renderMessageContent();
+    const centeredContent = isMediaMessage ? (
+        <div className='flex justify-center items-center'>{messageBody}</div>
+    ) : (
+        messageBody
+    );
+
     if (!fromMe) {
         return (
             <>
                 <DateIndicator message={message} previousMessage={previousMessage}/>
-                <div className='flex gap-1 w-2/3'>
+                <div className='flex gap-1 w-full max-w-[60%] sm:max-w-[45%] lg:max-w-[35%] xl:max-w-[100%]'>
                     <ChatBubbleAvatar isGroup={isGroup} isMember={isMember} message={message} fromAI={fromAI}/>
-                    <div className={`flex flex-col z-20 max-w-fit px-2 p-1 rounded-md shadow-md relative ${bgClass}`}>
+                    <div className={`flex flex-col z-20 ${bubbleWidthClass} px-2 p-1 rounded-md shadow-md relative ${bgClass}`}>
                         {!fromAI && <OtherMessageIndicator/>}
                         {fromAI && <Bot size={16} className='absolute bottom-[2px] left-2'/>}
                         {<MessageOptionsMenu message={message} me={me}/>}
-                        {renderMessageContent()}
+                        {centeredContent}
                         {open && <ImageDialog src={message.content} open={open} onClose={() => setOpen(false)}/>}
                         <MessageTime time={time} fromMe={fromMe}/>
                     </div>
@@ -68,12 +79,12 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
 		<>
 			<DateIndicator message={message} previousMessage={previousMessage} />
 
-			<div className='flex gap-1 w-2/3 ml-auto'>
-				<div className={`flex flex-col z-20 max-w-fit px-2 p-1 rounded-md shadow-md ml-auto relative m-2 ${bgClass}`}>
+			<div className='flex gap-1 w-full max-w-[60%] sm:max-w-[45%] lg:max-w-[35%] xl:max-w-[15%] ml-auto'>
+				<div className={`flex flex-col z-20 ${bubbleWidthClass} px-2 p-1 rounded-md shadow-md ml-auto relative m-2 ${bgClass}`}>
 					<SelfMessageIndicator />
 
                     {<MessageOptionsMenu message={message} me={me} />}
-                    {renderMessageContent()}
+                    {centeredContent}
 					{open && <ImageDialog src={message.content} open={open} onClose={() => setOpen(false)} />}
 					<MessageTime time={time} fromMe={fromMe} />
 				</div>
@@ -83,44 +94,63 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
 };
 export default ChatBubble;
 
-const VideoMessage = ({message}: { message: IMessage }) => {
-    return <ReactPlayer
-        url={message.content}
-        width='250px'
-        height='250px'
-        controls={true} light={true}
-        config={{
-            file: {
-                attributes: {
-                    controlsList: "nodownload",               // esconde o botão de download
-                    onContextMenu: (e: React.MouseEvent) => { // bloqueia o menu de contexto
-                        e.preventDefault();
+const VideoMessage = ({message}: { message: IMessage }) => (
+    <div
+        className='relative mx-auto w-full overflow-hidden rounded-md max-w-[380px] lg:max-w-[340px]'
+        style={{ aspectRatio: "16 / 9" }}
+    >
+        <ReactPlayer
+            url={message.content}
+            width='100%'
+            height='100%'
+            controls
+            light
+            config={{
+                file: {
+                    attributes: {
+                        controlsList: "nodownload",
+                        onContextMenu: (e: React.MouseEvent) => {
+                            e.preventDefault();
+                        },
                     },
                 },
-            },
-        }}
-    />;
-};
+            }}
+        />
+    </div>
+);
 
 const AudioMessage = ({message}: { message: IMessage }) => {
-    return <audio src={message.content}
-                  preload={"auto"}
-                  controls
-                  controlsList="nodownload"          // esconde o botão de download
-                  onContextMenu={(e) => e.preventDefault()} // bloqueia o clique direito
-                  style={{width: "250px", height: "50px", outline: "none"}}
-    />;
+    return (
+        <audio
+            src={message.content}
+            preload={"auto"}
+            controls
+            controlsList="nodownload"
+            onContextMenu={(e) => e.preventDefault()}
+            className='block w-full max-w-[280px] lg:max-w-[240px] outline-none mx-auto'
+        />
+    );
 };
 
 const ImageMessage = ({message, handleClick}: { message: IMessage; handleClick: () => void }) => {
+    const [aspectRatio, setAspectRatio] = useState(1);
+
     return (
-        <div className='w-[250px] h-[250px] m-2 relative'>
+        <div
+            className='relative mx-auto w-full max-w-[380px] lg:max-w-[340px] overflow-hidden rounded mt-2'
+            style={{ aspectRatio }}
+        >
             <Image
                 src={message.content}
                 fill
-                className='cursor-pointer object-cover rounded'
+                sizes='(max-width: 640px) 70vw, (max-width: 1024px) 50vw, 240px'
+                className='cursor-pointer object-cover'
                 alt='image'
                 onClick={handleClick}
+                onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+                    if (!naturalWidth || !naturalHeight) return;
+                    setAspectRatio(naturalWidth / naturalHeight);
+                }}
             />
         </div>
     );
@@ -134,7 +164,7 @@ const ImageDialog = ({src, onClose, open}: { open: boolean; src: string; onClose
                 if (!isOpen) onClose();
             }}
         >
-            <DialogContent className='min-w-[750px]'>
+            <DialogContent className="w-full !max-w-[95vw] sm:!max-w-4xl p-2">
                 <DialogTitle/>
                 <DialogDescription className='relative h-[450px] flex justify-center'>
                     <Image src={src} fill className='rounded-lg object-contain' alt='image'/>

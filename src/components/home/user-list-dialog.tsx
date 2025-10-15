@@ -3,7 +3,6 @@ import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Dialog,
-	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
@@ -21,6 +20,8 @@ import { useConversationStore } from "@/store/chat-store";
 import SearchBar from "@/components/home/search-bar";
 import useDebounce from "@/hooks/useDebouce";
 import {UserRole} from "../../../types/roles";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useSidebarStore } from "@/store/ui-store";
 
 const PAGE_SIZE = 30;
 
@@ -31,17 +32,19 @@ const UserListDialog = () => {
 	const [selectedImage, setSelectedImage] = useState<File | null>(null);
 	const [renderedImage, setRenderedImage] = useState("");
 	const [searchParam, setSearchParam] = useState("");
+	const [open, setOpen] = useState(false);
 
 	// debounce com 1000ms de espera
 	const searchText = useDebounce(searchParam, 1000);
 
 	const imgRef = useRef<HTMLInputElement>(null);
-	const dialogCloseRef = useRef<HTMLButtonElement>(null);
 
 	const upsertConversation = useMutation(api.conversations.upsertConversation);
 	const generateUploadUrl = useMutation(api.conversations.generateUploadUrl);
 	const me = useQuery(api.users.getMe);
 	const isAdmin = me?.role === UserRole.Admin;
+	const isDesktop = useMediaQuery("(min-width: 768px)");
+	const { close: closeSidebar } = useSidebarStore();
 
 	// pesquisa e infinite query
 	const { results, status, loadMore } = usePaginatedQuery(
@@ -95,7 +98,7 @@ const UserListDialog = () => {
 				});
 			}
 
-			dialogCloseRef.current?.click();
+			setOpen(false);
 			setSelectedUsers([]);
 			setGroupName("");
 			setSelectedImage(null);
@@ -142,16 +145,47 @@ const UserListDialog = () => {
 		}
 	};
 
+	const handleTriggerClick = () => {
+		setOpen(true);
+		if (!isDesktop) {
+			closeSidebar();
+		}
+	};
+
+	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) {
+			return;
+		}
+
+		if (!file.type.startsWith("image/")) {
+			toast.error("Please select a valid image.");
+			e.target.value = "";
+			return;
+		}
+
+		setSelectedImage(file);
+		e.target.value = "";
+	};
 
 	return (
-		<Dialog>
-			<DialogTrigger>
-				<p className='text-xs text-muted-foreground text-left flex items-center space-x-1'>New Chat <MessageSquareDiff size={16}/></p>
+		<Dialog
+			open={open}
+			onOpenChange={(nextOpen) => {
+				setOpen(nextOpen);
+			}}
+		>
+			<DialogTrigger asChild>
+				<button
+					type='button'
+					className='text-xs text-muted-foreground text-left flex items-center space-x-1 hover:text-foreground transition'
+					onClick={handleTriggerClick}
+				>
+					<span>New Chat</span> <MessageSquareDiff size={16}/>
+				</button>
 			</DialogTrigger>
-			<DialogContent className="w-full !max-w-[90vw] sm:!max-w-4xl">
+			<DialogContent className="w-full !max-w-[95vw] sm:!max-w-4xl p-2">
 				<DialogHeader>
-					{/* TODO: <DialogClose /> will be here */}
-					<DialogClose ref={dialogCloseRef} />
 					<DialogTitle>Users</DialogTitle>
 				</DialogHeader>
 
@@ -161,13 +195,12 @@ const UserListDialog = () => {
 						<Image src={renderedImage} fill alt='user image' className='rounded-full object-cover' />
 					</div>
 				)}
-				{/* TODO: input file */}
 				<input
 					type='file'
 					accept='image/*'
 					ref={imgRef}
 					hidden
-					onChange={(e) => setSelectedImage(e.target.files![0])}
+					onChange={handleImageChange}
 				/>
 				{selectedUsers.length > 1 && isAdmin && (
 					<>
@@ -241,7 +274,13 @@ const UserListDialog = () => {
 				</div>
 				<div className='flex justify-end gap-5'>
 					<div className="mr-5">
-						<Button variant={"destructive"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>
+						<Button
+							type="button"
+							variant={"destructive"}
+							onClick={() => setOpen(false)}
+						>
+							Cancel
+						</Button>
 					</div>
 					<div>
 						<Button
