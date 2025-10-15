@@ -148,7 +148,7 @@ const UserListDialog = () => {
 			<DialogTrigger>
 				<p className='text-xs text-muted-foreground text-left flex items-center space-x-1'>New Chat <MessageSquareDiff size={16}/></p>
 			</DialogTrigger>
-			<DialogContent>
+			<DialogContent className="w-full !max-w-[90vw] sm:!max-w-4xl">
 				<DialogHeader>
 					{/* TODO: <DialogClose /> will be here */}
 					<DialogClose ref={dialogCloseRef} />
@@ -239,9 +239,12 @@ const UserListDialog = () => {
 						</p>
 					)}
 				</div>
-				<div className='flex justify-between'>
-					<Button variant={"outline"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>
-					<Button
+				<div className='flex justify-end gap-5'>
+					<div className="mr-5">
+						<Button variant={"destructive"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>
+					</div>
+					<div>
+						<Button
 						onClick={handleCreateConversation}
 						disabled={
 							selectedUsers.length === 0 ||
@@ -256,6 +259,7 @@ const UserListDialog = () => {
 							"Create"
 						)}
 					</Button>
+					</div>
 				</div>
 			</DialogContent>
 		</Dialog>

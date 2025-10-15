@@ -1,5 +1,6 @@
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogHeader,
@@ -12,7 +13,7 @@ import {Conversation, IMessage, useConversationStore} from "@/store/chat-store";
 import {useMutation, useQuery} from "convex/react";
 import {api} from "../../../convex/_generated/api";
 import UpdateGroupMembersDialog from "@/components/home/update-group-members-dialog";
-import React, {useMemo, useState, useEffect} from "react";
+import React, {useMemo, useState, useEffect, useRef} from "react";
 import toast from "react-hot-toast";
 import {Id} from "../../../convex/_generated/dataModel";
 
@@ -25,12 +26,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import SearchBar from "@/components/home/search-bar";
 import useDebounce from "@/hooks/useDebouce";
+import { Button } from "../ui/button";
 
 type GroupMembersDialogProps = {
     selectedConversation: Conversation;
 };
 
 const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => {
+    const dialogCloseRef = useRef<HTMLButtonElement>(null);
+    
     const me = useQuery(api.users.getMe);
     const users = useQuery(api.users.getGroupMembers, {conversationId: selectedConversation._id});
     const [searchParam, setSearchParam] = useState("");
@@ -150,18 +154,35 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
     return (
         <Dialog>
             <DialogTrigger>
-                <p className="text-xs text-muted-foreground text-left">See members</p>
+                <p className="text-xs text-muted-foreground text-left">Click here for group info</p>
             </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="my-2">Current Members</DialogTitle>
+            <DialogContent className="w-full !max-w-4xl">
+                <div className="flex max-h-[80vh] flex-col gap-4 overflow-hidden">
+                    <DialogHeader>
+                        <DialogClose ref={dialogCloseRef} />
+                        <DialogTitle className="my-2">
+                        					<div className='flex gap-3 items-center'>
+
+                        <Avatar>
+								<AvatarImage src={selectedConversation.groupImage || "/placeholder.png"} className='object-cover' />
+								<AvatarFallback>
+									<div className='animate-pulse bg-gray-tertiary w-full h-full rounded-full' />
+								</AvatarFallback>
+							</Avatar>
+                        {selectedConversation.groupName}
+                        </div>
+                        </DialogTitle>
+                    </DialogHeader>
                     <DialogDescription asChild>
-                        <div>
-                            {selectedConversation?.admins?.includes(me?._id as Id<"users">) && (
-                                <div className="flex flex-col gap-3 items-end py-3">
-                                    <UpdateGroupMembersDialog selectedConversation={selectedConversation}/>
-                                </div>
-                            )}
+                        <div className="flex flex-1 flex-col gap-4 overflow-hidden">
+                            <div className="flex items-center justify-between">
+                                <h3>Members</h3>
+                                {selectedConversation?.admins?.includes(me?._id as Id<"users">) && (
+                                    <div className="flex items-center gap-3 py-3">
+                                        <UpdateGroupMembersDialog selectedConversation={selectedConversation}/>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Search */}
                             <div className="px-3">
@@ -174,7 +195,7 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
                             </div>
 
                             <div
-                                className="flex flex-col gap-3 overflow-auto max-h-60 border-2 rounded-md bg-gray-100"
+					            className='flex flex-col gap-3 border-2 rounded-md bg-gray-100 max-h-60 overflow-auto'
                                 onScroll={handleScroll}
                             >
                                 {displayedUsers.map((user) => (
@@ -286,9 +307,14 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
                                     </div>
                                 ))}
                             </div>
+                            <div className="flex justify-end gap-5">
+							    <div className="mr-5">
+                                    <Button variant={"destructive"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>
+                                </div>
+                            </div>
                         </div>
                     </DialogDescription>
-                </DialogHeader>
+                </div>
             </DialogContent>
         </Dialog>
     );

@@ -1,5 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import React, { useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Dialog,
@@ -10,15 +9,13 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { ImageIcon, MessageSquareDiff } from "lucide-react";
+import {  MessageSquareDiff } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import {useMutation, usePaginatedQuery, useQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import toast from "react-hot-toast";
 import {Conversation, useConversationStore} from "@/store/chat-store";
-import {addConversationParticipants} from "../../../convex/conversations";
 import useDebounce from "@/hooks/useDebouce";
 import SearchBar from "@/components/home/search-bar";
 
@@ -100,74 +97,80 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 			<DialogTrigger>
 				<p className='text-xs text-muted-foreground text-left flex items-center space-x-1'>Add members <MessageSquareDiff size={16}/></p>
 			</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					{/* TODO: <DialogClose /> will be here */}
-					<DialogClose ref={dialogCloseRef} />
-					<DialogTitle>Users</DialogTitle>
-				</DialogHeader>
+			<DialogContent className="w-full !max-w-[90vw] sm:!max-w-4xl">
+					<div className="flex max-h-[80vh] flex-col gap-4 overflow-hidden">
+						<DialogHeader>
+							{/* TODO: <DialogClose /> will be here */}
+							<DialogClose ref={dialogCloseRef} />
+							<DialogTitle>Users</DialogTitle>
+							<DialogDescription>Add new members to the group</DialogDescription>
+						</DialogHeader>
 
-				<DialogDescription>Add new members to the group</DialogDescription>
-
-				{/* Search */}
-				<SearchBar
-					placeholder="Search users…"
-					filterText={searchParam}
-					onFilterTextChange={handleSearchChange}
-					className="relative h-10 mx-3 flex-1"
-				/>
-
-				<div
-					className='flex flex-col gap-3 overflow-auto max-h-60 border-2 rounded-md bg-gray-100'
-					onScroll={handleScroll}
-				>
-					{users?.map((user) => (
+						{/* Search */}
+						<div className="px-3">
+							<SearchBar
+								placeholder="Search users…"
+								filterText={searchParam}
+								onFilterTextChange={handleSearchChange}
+								className="relative h-10 mx-3 flex-1"
+							/>
+						</div>
 						<div
-							key={user._id}
-							className={`flex gap-3 items-center p-2 rounded cursor-pointer active:scale-95 
-								transition-all ease-in-out duration-300
-							${selectedUsers.includes(user._id) ? "bg-green-primary" : ""}`}
-							onClick={() => {
-								if (selectedUsers.includes(user._id)) {
-									setSelectedUsers(selectedUsers.filter((id) => id !== user._id));
-								} else {
-									setSelectedUsers([...selectedUsers, user._id]);
-								}
-							}}
+							className='flex flex-col gap-3 border-2 rounded-md bg-gray-100 max-h-60 overflow-auto'
+							onScroll={handleScroll}
 						>
-							<Avatar className='overflow-visible'>
-								{user.isOnline && (
-									<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
-								)}
+							{users?.map((user) => (
+								<div
+									key={user._id}
+									className={`flex gap-3 items-center p-2 rounded cursor-pointer active:scale-95 
+										transition-all ease-in-out duration-300
+									${selectedUsers.includes(user._id) ? "bg-green-primary" : ""}`}
+									onClick={() => {
+										if (selectedUsers.includes(user._id)) {
+											setSelectedUsers(selectedUsers.filter((id) => id !== user._id));
+										} else {
+											setSelectedUsers([...selectedUsers, user._id]);
+										}
+									}}
+								>
+									<Avatar className='overflow-visible'>
+										{user.isOnline && (
+											<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
+										)}
 
-								<AvatarImage src={user.image} className='rounded-full object-cover' />
-								<AvatarFallback>
-									<div className='animate-pulse bg-gray-tertiary w-full h-full rounded-full'></div>
-								</AvatarFallback>
-							</Avatar>
+										<AvatarImage src={user.image} className='rounded-full object-cover' />
+										<AvatarFallback>
+											<div className='animate-pulse bg-gray-tertiary w-full h-full rounded-full'></div>
+										</AvatarFallback>
+									</Avatar>
 
-							<div className='w-full '>
-								<div className='flex items-center justify-between'>
-									<p className='text-md font-medium'>{user.name || user?.email?.split("@")[0]}</p>
+									<div className='w-full '>
+										<div className='flex items-center justify-between'>
+											<p className='text-md font-medium'>{user.name || user?.email?.split("@")[0]}</p>
+										</div>
+									</div>
 								</div>
+							))}
+						</div>
+						<div className='flex justify-end gap-5'>
+							<div className="mr-5">
+								<Button variant={"destructive"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>
+							</div>
+							<div>
+								<Button
+									onClick={handleUpdateGroup}
+									disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !selectedConversation.groupName) || isLoading}
+								>
+									{/* spinner */}
+									{isLoading ? (
+										<div className='w-5 h-5 border-t-2 border-b-2  rounded-full animate-spin' />
+									) : (
+										"Add"
+									)}
+								</Button>
 							</div>
 						</div>
-					))}
-				</div>
-				<div className='flex justify-between'>
-					<Button variant={"outline"} onClick={() => dialogCloseRef.current?.click()}>Cancel</Button>
-					<Button
-						onClick={handleUpdateGroup}
-						disabled={selectedUsers.length === 0 || (selectedUsers.length > 1 && !selectedConversation.groupName) || isLoading}
-					>
-						{/* spinner */}
-						{isLoading ? (
-							<div className='w-5 h-5 border-t-2 border-b-2  rounded-full animate-spin' />
-						) : (
-							"Add"
-						)}
-					</Button>
-				</div>
+					</div>
 			</DialogContent>
 		</Dialog>
 	);

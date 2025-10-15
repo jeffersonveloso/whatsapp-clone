@@ -41,7 +41,7 @@ const LeftPanel = () => {
 	};
 
 	const sidebarBody = (
-		<div className='flex flex-col h-full bg-left-panel border-gray-600 border-r'>
+		<div className='flex h-full w-full flex-col bg-left-panel border-gray-600 border-r'>
 			<div className='sticky top-0 bg-left-panel z-10'>
 				<div className='flex justify-between bg-gray-primary p-3 items-center'>
 					<UserButton />
@@ -69,7 +69,7 @@ const LeftPanel = () => {
 				</div>
 			</div>
 
-			<div className='my-3 flex flex-col gap-0 overflow-auto flex-1'>
+			<div className='my-3 flex flex-1 flex-col gap-0 overflow-auto min-h-0'>
 				{conversations?.map((conversation) => (
 					<Conversation
 						key={conversation._id}
@@ -92,7 +92,7 @@ const LeftPanel = () => {
 
 	return (
 		<>
-			<div className='hidden md:flex md:h-full w-1/4 max-w-sm'>{sidebarBody}</div>
+			<div className='hidden flex-shrink-0 md:flex md:h-full md:w-1/4 md:max-w-sm'>{sidebarBody}</div>
 
 			{!isDesktop && isSidebarOpen ? (
 				<div className='fixed inset-0 z-[70] flex md:hidden'>
