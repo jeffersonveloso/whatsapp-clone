@@ -13,6 +13,8 @@ type AudioRecorderDialogProps = {
     onClose: () => void;
 };
 
+const MAX_AUDIO_SIZE_BYTES = 40 * 1024 * 1024;
+
 const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
     const [isRecording, setIsRecording] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -46,12 +48,18 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
             mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
             mediaRecorder.onstop = () => {
                 const blob = new Blob(audioChunksRef.current, {type: "audio/webm"});
+                if (blob.size > MAX_AUDIO_SIZE_BYTES) {
+                    toast.error("Audio must be smaller than 40MB");
+                    audioChunksRef.current = [];
+                    setAudioURL(null);
+                    return;
+                }
                 setAudioURL(URL.createObjectURL(blob));
             };
             mediaRecorder.start();
             setIsRecording(true);
         } catch (err) {
-            toast.error("Permissão de microfone negada ou indisponível");
+            toast.error("Microphone permission denied or unavailable");
         }
     };
 
@@ -63,10 +71,17 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
     const handleSendAudio = async () => {
         if (!audioChunksRef.current.length) return;
         setIsRecording(false);
-        setIsLoading(true);
         try {
             // transformar em File para manter compatibilidade
             const blob = new Blob(audioChunksRef.current, {type: "audio/webm"});
+            if (blob.size > MAX_AUDIO_SIZE_BYTES) {
+                toast.error("Audio must be smaller than 40MB");
+                setAudioURL(null);
+                audioChunksRef.current = [];
+                return;
+            }
+
+            setIsLoading(true);
             const file = new File([blob], `audio_${Date.now()}.webm`, {type: "audio/webm"});
 
             // 1) gerar URL de upload
@@ -87,7 +102,7 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
 
             onClose();
         } catch (err: any) {
-            toast.error("Falha ao enviar áudio");
+            toast.error("Failed to send audio");
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -102,7 +117,7 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent>
+            <DialogContent className="w-full !max-w-[95vw] sm:!max-w-4xl p-2">
                 <DialogTitle>Record Audio</DialogTitle>
                 <DialogDescription asChild>
                     {/* Indicador de gravação */}
@@ -113,6 +128,9 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
                                 <span>Recording...</span>
                             </div>
                         )}
+                        <div>
+                            <span>Max: 40MB</span>
+                        </div>
 
                         {/* Fluxo de gravação / preview */}
                         {!audioURL ? (

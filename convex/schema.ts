@@ -9,7 +9,7 @@ export default defineSchema({
         image: v.string(),
         tokenIdentifier: v.string(),
         isOnline: v.boolean(),
-        role: v.union(v.literal(UserRole.Common), v.literal(UserRole.Admin)),
+        role: v.union(v.literal(UserRole.common), v.literal(UserRole.admin), v.literal(UserRole.superAdmin)),
     }).index("by_tokenIdentifier", ["tokenIdentifier"])
         .index("by_name", ["name"])
         .searchIndex("userSearchName", {

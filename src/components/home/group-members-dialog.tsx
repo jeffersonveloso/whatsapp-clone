@@ -125,13 +125,13 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
 
             const conversationId = await upsertConversation({
                 isGroup: false,
-                participants: [me._id, user._id],
+                participants: [me?._id, user._id],
             });
 
             setSelectedConversation({
                 _id: conversationId,
                 name: user.name,
-                participants: [me._id, user._id],
+                participants: [me?._id, user._id],
                 isGroup: false,
                 isOnline: user.isOnline,
                 image: user.image,

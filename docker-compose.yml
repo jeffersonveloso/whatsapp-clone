@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      target: runner
+    image: whatsapp-clone-app
+    environment:
+      NODE_ENV: production
+    env_file:
+      - .env.local
+    depends_on:
+      - traefik
+    expose:
+      - "3003"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whatsapp-clone.rule=Host(`whatsapp.localhost`)"
+      - "traefik.http.routers.whatsapp-clone.entrypoints=web"
+      - "traefik.http.services.whatsapp-clone.loadbalancer.server.port=3003"
+    networks:
+      - web
+
+  traefik:
+    image: traefik:v3.1
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge

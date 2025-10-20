@@ -42,7 +42,7 @@ const UserListDialog = () => {
 	const upsertConversation = useMutation(api.conversations.upsertConversation);
 	const generateUploadUrl = useMutation(api.conversations.generateUploadUrl);
 	const me = useQuery(api.users.getMe);
-	const isAdmin = me?.role === UserRole.Admin;
+	const isAdmin = me?.role != UserRole.common;
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 	const { close: closeSidebar } = useSidebarStore();
 

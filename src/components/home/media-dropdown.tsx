@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { ImageIcon, Plus, Video } from "lucide-react";
 import {Dialog, DialogContent, DialogDescription, DialogTitle} from "../ui/dialog";
@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useConversationStore } from "@/store/chat-store";
+const MAX_MEDIA_SIZE_BYTES = 40 * 1024 * 1024;
 
 const MediaDropdown = () => {
 	const imageInput = useRef<HTMLInputElement>(null);
@@ -26,6 +27,8 @@ const MediaDropdown = () => {
 	const { selectedConversation } = useConversationStore();
 
 	const handleSendImage = async () => {
+		if (!selectedImage) return;
+
 		setIsLoading(true);
 		try {
 			// Step 1: Get a short-lived upload URL
@@ -54,6 +57,8 @@ const MediaDropdown = () => {
 	};
 
 	const handleSendVideo = async () => {
+		if (!selectedVideo) return;
+
 		setIsLoading(true);
 		try {
 			const postUrl = await generateUploadUrl();
@@ -73,6 +78,7 @@ const MediaDropdown = () => {
 
 			setSelectedVideo(null);
 		} catch (error) {
+			toast.error("Failed to send video");
 		} finally {
 			setIsLoading(false);
 		}
@@ -84,15 +90,33 @@ const MediaDropdown = () => {
 				type='file'
 				ref={imageInput}
 				accept='image/*'
-				onChange={(e) => setSelectedImage(e.target.files![0])}
+				onChange={(e) => {
+					const file = e.target.files?.[0];
+					if (!file) return;
+					if (file.size > MAX_MEDIA_SIZE_BYTES) {
+						toast.error("Image must be smaller than 40MB");
+						e.target.value = "";
+						return;
+					}
+					setSelectedImage(file);
+				}}
 				hidden
 			/>
 
 			<input
 				type='file'
 				ref={videoInput}
-				accept='video/mp4'
-				onChange={(e) => setSelectedVideo(e.target?.files![0])}
+				accept='video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,.mkv,.mov,.avi'
+				onChange={(e) => {
+					const file = e.target.files?.[0];
+					if (!file) return;
+					if (file.size > MAX_MEDIA_SIZE_BYTES) {
+						toast.error("Video must be smaller than 40MB");
+						e.target.value = "";
+						return;
+					}
+					setSelectedVideo(file);
+				}}
 				hidden
 			/>
 
@@ -155,22 +179,32 @@ const MediaImageDialog = ({ isOpen, onClose, selectedImage, isLoading, handleSen
 	}, [selectedImage]);
 
 	return (
-		<Dialog
-			open={isOpen}
-			onOpenChange={(isOpen) => {
-				if (!isOpen) onClose();
-			}}
-		>
-			<DialogContent>
-				<DialogTitle>Media</ DialogTitle>
-				<DialogDescription className='flex flex-col gap-10 justify-center items-center'>
-					{renderedImage && <Image src={renderedImage} width={300} height={300} alt='selected image' />}
+			<Dialog
+				open={isOpen}
+				onOpenChange={(isOpen) => {
+					if (!isOpen) onClose();
+				}}
+			>
+				<DialogContent className='w-full !max-w-[95vw] sm:!max-w-4xl p-2'>
+					<DialogTitle>Media</DialogTitle>
+					<DialogDescription>Image</DialogDescription>
+					<div className='flex flex-col gap-4 justify-center items-center w-full'>
+						{renderedImage && (
+							<Image
+								src={renderedImage}
+								width={1200}
+								height={675}
+								alt='selected image'
+								priority
+								style={{ width: "100%", height: "auto" }}
+							/>
+						)}
+					</div>
 					<Button className='w-full' disabled={isLoading} onClick={handleSendImage}>
 						{isLoading ? "Sending..." : "Send"}
 					</Button>
-				</DialogDescription>
-			</DialogContent>
-		</Dialog>
+				</DialogContent>
+			</Dialog>
 	);
 };
 
@@ -183,7 +217,16 @@ type MediaVideoDialogProps = {
 };
 
 const MediaVideoDialog = ({ isOpen, onClose, selectedVideo, isLoading, handleSendVideo }: MediaVideoDialogProps) => {
-	const renderedVideo = URL.createObjectURL(new Blob([selectedVideo], { type: "video/mp4" }));
+	const renderedVideo = useMemo(() => {
+		if (!selectedVideo) return null;
+		return URL.createObjectURL(selectedVideo);
+	}, [selectedVideo]);
+
+	useEffect(() => {
+		return () => {
+			if (renderedVideo) URL.revokeObjectURL(renderedVideo);
+		};
+	}, [renderedVideo]);
 
 	return (
 		<Dialog
@@ -192,7 +235,8 @@ const MediaVideoDialog = ({ isOpen, onClose, selectedVideo, isLoading, handleSen
 				if (!isOpen) onClose();
 			}}
 		>
-			<DialogContent>
+			<DialogContent className='w-full !max-w-[95vw] sm:!max-w-4xl p-2'>
+				<DialogTitle>Media</DialogTitle>
 				<DialogDescription>Video</DialogDescription>
 				<div className='w-full'>
 					{renderedVideo && <ReactPlayer url={renderedVideo} controls width='100%' />}
