@@ -6,6 +6,7 @@
 .pnp.js
 .yarn/install-state.gz
 /.idea
+/convex/_generate/
 # testing
 /coverage
 
@@ -34,3 +35,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
