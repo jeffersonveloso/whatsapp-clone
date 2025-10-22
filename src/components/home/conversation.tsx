@@ -6,7 +6,6 @@ import {useQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useConversationStore } from "@/store/chat-store";
 import ChatOptionsMenu from "@/components/home/chat-options-menu";
-import {Id} from "../../../convex/_generated/dataModel";
 
 type ConversationProps = {
 	conversation: any;

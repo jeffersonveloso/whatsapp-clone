@@ -60,9 +60,9 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
         return (
             <>
                 <DateIndicator message={message} previousMessage={previousMessage}/>
-                <div className='flex gap-1 w-full max-w-[60%] sm:max-w-[45%] lg:max-w-[35%] xl:max-w-[100%]'>
+                <div className='flex gap-1 w-full max-w-[60%] sm:max-w-[45%] lg:max-w-[35%] xl:max-w-[25%]'>
                     <ChatBubbleAvatar isGroup={isGroup} isMember={isMember} message={message} fromAI={fromAI}/>
-                    <div className={`flex flex-col z-20 ${bubbleWidthClass} px-2 p-1 rounded-md shadow-md relative ${bgClass}`}>
+                    <div className={`flex flex-col z-20 ${bubbleWidthClass} px-2 p-1 rounded-md shadow-md ml-auto relative m-2 ${bgClass}`}>
                         {!fromAI && <OtherMessageIndicator/>}
                         {fromAI && <Bot size={16} className='absolute bottom-[2px] left-2'/>}
                         {<MessageOptionsMenu message={message} me={me}/>}
@@ -79,7 +79,7 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
 		<>
 			<DateIndicator message={message} previousMessage={previousMessage} />
 
-			<div className='flex gap-1 w-full max-w-[60%] sm:max-w-[45%] lg:max-w-[35%] xl:max-w-[15%] ml-auto'>
+			<div className='flex gap-1 w-full max-w-[60%] sm:max-w-[45%] lg:max-w-[35%] xl:max-w-[25%] ml-auto'>
 				<div className={`flex flex-col z-20 ${bubbleWidthClass} px-2 p-1 rounded-md shadow-md ml-auto relative m-2 ${bgClass}`}>
 					<SelfMessageIndicator />
 

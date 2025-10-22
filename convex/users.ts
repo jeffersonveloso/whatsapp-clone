@@ -9,7 +9,14 @@ export const createUser = internalMutation({
 		email: v.optional(v.string()),
 		name: v.string(),
 		image: v.string(),
-		role: v.union(v.literal(UserRole.common), v.literal(UserRole.admin), v.literal(UserRole.superAdmin))
+		role: v.optional(
+			v.union(
+				v.literal(UserRole.common),
+				v.literal(UserRole.admin),
+				v.literal(UserRole.superAdmin),
+				v.null(),
+			),
+		)
 	},
 	handler: async (ctx, args) => {
 		await ctx.db.insert("users", {
@@ -18,7 +25,7 @@ export const createUser = internalMutation({
 			name: args.name,
 			image: args.image,
 			isOnline: true,
-			role: args.role,
+			role: args.role ? args.role : UserRole.common
 		});
 	},
 });
@@ -28,7 +35,14 @@ export const updateUser = internalMutation({
 		tokenIdentifier: v.string(),
 		image: v.string(),
 		name: v.string(),
-		role: v.optional(v.union(v.literal(UserRole.common), v.literal(UserRole.admin), v.literal(UserRole.superAdmin)))
+		role: v.optional(
+			v.union(
+				v.literal(UserRole.common),
+				v.literal(UserRole.admin),
+				v.literal(UserRole.superAdmin),
+				v.null(),
+			),
+		)
 	},
 	async handler(ctx, args) {
 		const user = await ctx.db
