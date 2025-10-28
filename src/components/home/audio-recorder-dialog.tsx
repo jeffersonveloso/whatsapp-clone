@@ -63,14 +63,20 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
         }
     };
 
-    const startWaveform = (stream: MediaStream) => {
+    const startWaveform = async (stream: MediaStream) => {
         if (typeof window === "undefined") return;
         stopWaveform();
         const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext;
         if (!AudioContextCtor) return;
         const audioContext = new AudioContextCtor();
         audioContextRef.current = audioContext;
-        audioContext.resume().catch(() => undefined);
+        if (audioContext.state === "suspended") {
+            try {
+                await audioContext.resume();
+            } catch (error) {
+                console.warn("Failed to resume AudioContext", error);
+            }
+        }
 
         const analyser = audioContext.createAnalyser();
         analyser.fftSize = 2048;
@@ -101,17 +107,33 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
                     const start = idx * segmentLength;
                     const end = Math.min(start + segmentLength, data.length);
                     let sumSquares = 0;
+                    let peak = 0;
                     for (let i = start; i < end; i++) {
                         const v = data[i];
                         sumSquares += v * v;
+                        if (Math.abs(v) > peak) {
+                            peak = Math.abs(v);
+                        }
                     }
                     const sampleCount = Math.max(1, end - start);
                     const rms = Math.sqrt(sumSquares / sampleCount);
-                    const normalized = Math.min(1, rms * 14);
-                    const noiseFloor = normalized < 0.025 ? 0 : normalized;
-                    const jitter = noiseFloor === 0 ? 0 : (Math.random() - 0.5) * 0.08;
-                    const target = Math.max(0, noiseFloor + jitter);
-                    const smoothing = target > prevValue ? 0.52 : 0.72;
+                    const energy = Math.max(rms, peak);
+
+                    let target: number;
+                    if (energy < 0.008) {
+                        // Fast decay back to idle when there is no noticeable audio input.
+                        target = prevValue * 0.82;
+                    } else {
+                        const scaled = Math.min(1, energy * 20 + 0.01);
+                        const jitter = (Math.random() - 0.5) * 0.04 * scaled;
+                        target = Math.max(0, scaled + jitter);
+                    }
+
+                    if (target < 0.012) {
+                        target = 0;
+                    }
+
+                    const smoothing = target > prevValue ? 0.46 : 0.72;
                     const eased = prevValue * (1 - smoothing) + target * smoothing;
                     return Math.min(1, Math.max(0, eased));
                 })
@@ -124,6 +146,7 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
     };
 
     // Sempre resetar estado ao fechar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (!isOpen) {
             cleanupStream();
@@ -188,7 +211,7 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
             streamRef.current = stream;
-            startWaveform(stream);
+            await startWaveform(stream);
             mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
             mediaRecorder.onstop = () => {
                 const blob = new Blob(audioChunksRef.current, {type: recordingConfigRef.current.mimeType});

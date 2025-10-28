@@ -207,22 +207,24 @@ const ImageMessage = ({
   image?: IMessage["imageMessage"];
   onPreview: () => void;
 }) => {
+  const [aspectRatio, setAspectRatio] = useState(4 / 3);
+
   if (!image?.url) return null;
-    const [aspectRatio, setAspectRatio] = useState(4 / 3);
-    const clampedRatio = Math.min(Math.max(aspectRatio, 0.8), 1.4);
 
-    const containerStyle = {
-        aspectRatio: clampedRatio,
-        maxHeight: "60vh",
-    } as React.CSSProperties;
+  const clampedRatio = Math.min(Math.max(aspectRatio, 0.8), 1.4);
 
-    return (
-        <div className="flex flex-col gap-2 items-center w-full">
-            <div
-                className="relative rounded-md w-full sm:w-[90%] max-w-[300px] sm:max-w-[420px] min-w-[140px] overflow-hidden"
-                style={containerStyle}
-            >
-                <Image
+  const containerStyle = {
+    aspectRatio: clampedRatio,
+    maxHeight: "60vh",
+  } as React.CSSProperties;
+
+  return (
+    <div className="flex flex-col gap-2 items-center w-full">
+      <div
+        className="relative rounded-md w-full sm:w-[90%] max-w-[300px] sm:max-w-[420px] min-w-[140px] overflow-hidden"
+        style={containerStyle}
+      >
+        <Image
           src={image.url}
           fill
           priority={false}
