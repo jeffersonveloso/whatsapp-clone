@@ -1,13 +1,16 @@
-import {MessageSeenSvg} from "@/lib/svgs";
-import {IMessage, useConversationStore} from "@/store/chat-store";
+import { MessageSeenSvg } from "@/lib/svgs";
+import { IMessage, useConversationStore } from "@/store/chat-store";
 import ChatBubbleAvatar from "./chat-bubble-avatar";
 import DateIndicator from "./date-indicator";
 import Image from "next/image";
-import {useState} from "react";
-import {Dialog, DialogContent, DialogDescription, DialogTitle} from "../ui/dialog";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../ui/dialog";
 import ReactPlayer from "react-player";
 import MessageOptionsMenu from "./message-options-menu";
-import {Bot} from "lucide-react";
+import { Bot, FileText } from "lucide-react";
+import { MessageType } from "../../../types/messages";
+
+type MessageReply = NonNullable<IMessage["reply"]>;
 
 type ChatBubbleProps = {
     message: IMessage;
@@ -28,24 +31,35 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
     const fromAI = message.sender?.name === "ChatGPT";
     const bgClass = fromMe ? "bg-green-chat" : !fromAI ? "bg-white dark:bg-gray-primary" : "bg-blue-500 text-white";
 
-    const [open, setOpen] = useState(false);
+    const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
     const renderMessageContent = () => {
         switch (message.messageType) {
-            case "text":
-                return <TextMessage message={message}/>;
-            case "image":
-                return <ImageMessage message={message} handleClick={() => setOpen(true)}/>;
-            case "video":
-                return <VideoMessage message={message}/>;
-            case "audio":
-                return <AudioMessage message={message}/>;
+            case MessageType.textMessage:
+                return <TextMessage content={message.textMessage?.content ?? ""} />;
+            case MessageType.imageMessage:
+                return (
+                    <ImageMessage
+                        image={message.imageMessage}
+                        onPreview={() => {
+                            if (message.imageMessage?.url) {
+                                setLightboxSrc(message.imageMessage.url);
+                            }
+                        }}
+                    />
+                );
+            case MessageType.videoMessage:
+                return <VideoMessage video={message.videoMessage} />;
+            case MessageType.audioMessage:
+                return <AudioMessage audio={message.audioMessage} />;
+            case MessageType.documentMessage:
+                return <DocumentMessage document={message.documentMessage} />;
             default:
                 return null;
         }
     };
 
-    const isMediaMessage = message.messageType !== "text";
+    const isMediaMessage = message.messageType !== MessageType.textMessage;
     const bubbleWidthClass = isMediaMessage
         ? "w-full"
         : "w-fit max-w-[80vw] sm:max-w-[360px] lg:max-w-[420px]";
@@ -62,12 +76,13 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
                 <DateIndicator message={message} previousMessage={previousMessage}/>
                 <div className='flex gap-1 w-full max-w-[60%] sm:max-w-[45%] lg:max-w-[35%] xl:max-w-[25%]'>
                     <ChatBubbleAvatar isGroup={isGroup} isMember={isMember} message={message} fromAI={fromAI}/>
-                    <div className={`flex flex-col z-20 ${bubbleWidthClass} px-2 p-1 rounded-md shadow-md ml-auto relative m-2 ${bgClass}`}>
+                    <div className={`flex flex-col z-20 ${bubbleWidthClass} px-2 p-1 rounded-md shadow-md relative m-2 ${bgClass}`}>
                         {!fromAI && <OtherMessageIndicator/>}
                         {fromAI && <Bot size={16} className='absolute bottom-[2px] left-2'/>}
                         {<MessageOptionsMenu message={message} me={me}/>}
+                        {message.reply && <ReplyPreviewBubble reply={message.reply} isFromMe={fromMe} />}
                         {centeredContent}
-                        {open && <ImageDialog src={message.content} open={open} onClose={() => setOpen(false)}/>}
+                        {lightboxSrc && <ImageDialog src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
                         <MessageTime time={time} fromMe={fromMe}/>
                     </div>
                 </div>
@@ -84,8 +99,9 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
 					<SelfMessageIndicator />
 
                     {<MessageOptionsMenu message={message} me={me} />}
+                    {message.reply && <ReplyPreviewBubble reply={message.reply} isFromMe={fromMe} />}
                     {centeredContent}
-					{open && <ImageDialog src={message.content} open={open} onClose={() => setOpen(false)} />}
+					{lightboxSrc && <ImageDialog src={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
 					<MessageTime time={time} fromMe={fromMe} />
 				</div>
 			</div>
@@ -94,35 +110,46 @@ const ChatBubble = ({me, message, previousMessage}: ChatBubbleProps) => {
 };
 export default ChatBubble;
 
-const VideoMessage = ({message}: { message: IMessage }) => (
-    <div
-        className='relative mx-auto w-full overflow-hidden rounded-md max-w-[380px] lg:max-w-[340px]'
-        style={{ aspectRatio: "16 / 9" }}
-    >
-        <ReactPlayer
-            url={message.content}
-            width='100%'
-            height='100%'
-            controls
-            light
-            config={{
-                file: {
-                    attributes: {
-                        controlsList: "nodownload",
-                        onContextMenu: (e: React.MouseEvent) => {
-                            e.preventDefault();
+const VideoMessage = ({ video }: { video?: IMessage["videoMessage"] }) => {
+    if (!video?.url) return null;
+    return (
+        <div className="flex flex-col gap-2">
+            <div
+                className='relative mx-auto w-full overflow-hidden rounded-md max-w-[380px] lg:max-w-[340px]'
+                style={{ aspectRatio: "16 / 9" }}
+            >
+                <ReactPlayer
+                    url={video.url}
+                    width='100%'
+                    height='100%'
+                    controls
+                    light
+                    config={{
+                        file: {
+                            attributes: {
+                                controlsList: "nodownload",
+                                onContextMenu: (e: React.MouseEvent) => {
+                                    e.preventDefault();
+                                },
+                            },
                         },
-                    },
-                },
-            }}
-        />
-    </div>
-);
+                    }}
+                />
+            </div>
+            {video.caption && (
+                <p className="text-xs text-muted-foreground text-center px-2 whitespace-pre-wrap break-words">
+                    {video.caption}
+                </p>
+            )}
+        </div>
+    );
+};
 
-const AudioMessage = ({message}: { message: IMessage }) => {
+const AudioMessage = ({ audio }: { audio?: IMessage["audioMessage"] }) => {
+    if (!audio?.url) return null;
     return (
         <audio
-            src={message.content}
+            src={audio.url}
             preload={"auto"}
             controls
             controlsList="nodownload"
@@ -132,34 +159,43 @@ const AudioMessage = ({message}: { message: IMessage }) => {
     );
 };
 
-const ImageMessage = ({message, handleClick}: { message: IMessage; handleClick: () => void }) => {
+const ImageMessage = ({ image, onPreview }: { image?: IMessage["imageMessage"]; onPreview: () => void }) => {
+    if (!image?.url) return null;
     const [aspectRatio, setAspectRatio] = useState(1);
 
     return (
-        <div
-            className='relative mx-auto w-full max-w-[380px] lg:max-w-[340px] overflow-hidden rounded mt-2'
-            style={{ aspectRatio }}
-        >
-            <Image
-                src={message.content}
-                fill
-                sizes='(max-width: 640px) 70vw, (max-width: 1024px) 50vw, 240px'
-                className='cursor-pointer object-cover'
-                alt='image'
-                onClick={handleClick}
-                onLoadingComplete={({ naturalWidth, naturalHeight }) => {
-                    if (!naturalWidth || !naturalHeight) return;
-                    setAspectRatio(naturalWidth / naturalHeight);
-                }}
-            />
+        <div className="flex flex-col gap-2">
+            <div
+                className='relative mx-auto w-full max-w-[380px] lg:max-w-[340px] overflow-hidden rounded mt-2'
+                style={{ aspectRatio }}
+            >
+                <Image
+                    src={image.url}
+                    fill
+                    sizes='(max-width: 640px) 70vw, (max-width: 1024px) 50vw, 240px'
+                    className='cursor-pointer object-cover'
+                    alt='image'
+                    onClick={onPreview}
+                    onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+                        if (!naturalWidth || !naturalHeight) return;
+                        setAspectRatio(naturalWidth / naturalHeight);
+                    }}
+                />
+            </div>
+            {image.caption && (
+                <p className="text-xs text-muted-foreground text-center px-2 whitespace-pre-wrap break-words">
+                    {image.caption}
+                </p>
+            )}
         </div>
     );
 };
 
-const ImageDialog = ({src, onClose, open}: { open: boolean; src: string; onClose: () => void }) => {
+const ImageDialog = ({ src, onClose }: { src: string | null; onClose: () => void }) => {
+    if (!src) return null;
     return (
         <Dialog
-            open={open}
+            open={Boolean(src)}
             onOpenChange={(isOpen) => {
                 if (!isOpen) onClose();
             }}
@@ -190,23 +226,74 @@ const SelfMessageIndicator = () => (
     <div className='absolute bg-green-chat top-0 -right-[3px] w-3 h-3 rounded-br-full overflow-hidden'/>
 );
 
-const TextMessage = ({message}: { message: IMessage }) => {
-    const isLink = /^(ftp|http|https):\/\/[^ "]+$/.test(message.content); // Check if the content is a URL
+const TextMessage = ({ content }: { content: string }) => {
+    const isLink = /^(ftp|http|https):\/\/[^ "]+$/.test(content);
 
     return (
         <div>
             {isLink ? (
                 <a
-                    href={message.content}
+                    href={content}
                     target='_blank'
                     rel='noopener noreferrer'
                     className={`mr-2 text-sm font-light text-blue-400 underline`}
                 >
-                    {message.content}
+                    {content}
                 </a>
             ) : (
-                <p className={`mr-2 text-sm font-light`}>{message.content}</p>
+                <p className={`mr-2 text-sm font-light whitespace-pre-wrap break-words`}>{content}</p>
             )}
         </div>
     );
+};
+
+const DocumentMessage = ({ document }: { document?: IMessage["documentMessage"] }) => {
+    if (!document?.url) return null;
+
+    return (
+        <a
+            href={document.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-blue-500 underline"
+        >
+            <FileText size={16} />
+            {document.title || document.fileName || "Document"}
+        </a>
+    );
+};
+
+const ReplyPreviewBubble = ({ reply, isFromMe }: { reply: MessageReply; isFromMe: boolean }) => {
+    const author =
+        reply.participant?.name ||
+        reply.participant?.email?.split("@")[0] ||
+        (reply.participant ? "Unknown" : "ChatGPT");
+    const summary = getQuotedSummary(reply);
+
+    return (
+        <div className={`mb-2 rounded-md border-l-4 px-2 py-1 text-xs text-muted-foreground ${
+            isFromMe ? "border-green-500/80" : "border-blue-500/80"
+        } bg-gray-200/60 dark:bg-gray-800/40`}
+        >
+            <p className='font-semibold'>{author}</p>
+            <p className='mt-1 whitespace-pre-wrap break-words'>{summary}</p>
+        </div>
+    );
+};
+
+const getQuotedSummary = (reply: MessageReply): string => {
+    switch (reply.quotedConversationType) {
+        case MessageType.textMessage:
+            return reply.quotedMessage?.content || "";
+        case MessageType.imageMessage:
+            return reply.quotedMessage?.caption || "Photo";
+        case MessageType.videoMessage:
+            return reply.quotedMessage?.caption || "Video";
+        case MessageType.documentMessage:
+            return reply.quotedMessage?.title || reply.quotedMessage?.fileName || "Document";
+        case MessageType.audioMessage:
+            return "Audio message";
+        default:
+            return "Message";
+    }
 };

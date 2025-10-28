@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import { MessageType } from "../types/messages";
 
 const apiKey = process.env.OPENAI_API_KEY;
 const openai = new OpenAI({ apiKey });
@@ -31,7 +32,7 @@ export const chat = action({
 		await ctx.runMutation(api.messages.sendChatGPTMessage, {
 			content: messageContent ?? "I'm sorry, I don't have a response for that",
 			conversation: args.conversation,
-			messageType: "text",
+			messageType: MessageType.textMessage,
 		});
 	},
 });
@@ -53,7 +54,7 @@ export const dall_e = action({
 		await ctx.runMutation(api.messages.sendChatGPTMessage, {
 			content: imageUrl ?? "/poopenai.png",
 			conversation: args.conversation,
-			messageType: "image",
+			messageType: MessageType.imageMessage,
 		});
 	},
 });

@@ -1,11 +1,12 @@
 import { formatDate } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { MessageSeenSvg } from "@/lib/svgs";
-import {ImageIcon, Mic, Users, VideoIcon} from "lucide-react";
-import {useQuery} from "convex/react";
+import { FileText, ImageIcon, Mic, Users, VideoIcon } from "lucide-react";
+import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useConversationStore } from "@/store/chat-store";
 import ChatOptionsMenu from "@/components/home/chat-options-menu";
+import { MessageType } from "../../../types/messages";
 
 type ConversationProps = {
 	conversation: any;
@@ -21,6 +22,7 @@ const Conversation = ({
 	const lastMessage = conversation.lastMessage;
 	const lastMessageType = lastMessage?.messageType;
 	const me = useQuery(api.users.getMe);
+	const sentByMe = me?._id ? lastMessage?.sender === me._id : false;
 
 	const { setSelectedConversation, selectedConversation } = useConversationStore();
 	const activeBgClass = selectedConversation?._id === conversation._id;
@@ -54,20 +56,21 @@ const Conversation = ({
 							{formatDate(lastMessage?._creationTime || conversation._creationTime)}
 						</span>
 					</div>
-					<p className='text-[12px] mt-1 text-gray-500 flex items-center gap-1 '>
-						{lastMessage?.sender === me?._id ? <MessageSeenSvg /> : ""}
+				<p className='text-[12px] mt-1 text-gray-500 flex items-center gap-1 '>
+					{sentByMe ? <MessageSeenSvg /> : null}
 						{conversation.isGroup && <Users size={16} />}
 						{!lastMessage && "Say Hi!"}
-						{lastMessageType === "text" ? (
-							lastMessage?.content.length > 30 ? (
-								<span>{lastMessage?.content.slice(0, 30)}...</span>
-							) : (
-								<span>{lastMessage?.content}</span>
-							)
-						) : null}
-						{lastMessageType === "image" && <ImageIcon size={16} />}
-						{lastMessageType === "video" && <VideoIcon size={16} />}
-						{lastMessageType === "audio" && <Mic size={16} />}
+						{lastMessageType === MessageType.textMessage && lastMessage?.textMessage?.content && (
+							<span>
+								{lastMessage.textMessage.content.length > 30
+									? `${lastMessage.textMessage.content.slice(0, 30)}...`
+									: lastMessage.textMessage.content}
+							</span>
+						)}
+						{lastMessageType === MessageType.imageMessage && <ImageIcon size={16} />}
+						{lastMessageType === MessageType.videoMessage && <VideoIcon size={16} />}
+						{lastMessageType === MessageType.audioMessage && <Mic size={16} />}
+						{lastMessageType === MessageType.documentMessage && <FileText size={16} />}
 					</p>
 				</div>
 				<ChatOptionsMenu

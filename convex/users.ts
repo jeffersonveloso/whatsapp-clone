@@ -9,14 +9,14 @@ export const createUser = internalMutation({
 		email: v.optional(v.string()),
 		name: v.string(),
 		image: v.string(),
-		role: v.optional(
-			v.union(
-				v.literal(UserRole.common),
-				v.literal(UserRole.admin),
-				v.literal(UserRole.superAdmin),
-				v.null(),
-			),
-		)
+	role: v.optional(
+		v.union(
+			v.literal(UserRole.common),
+			v.literal(UserRole.admin),
+			v.literal(UserRole.superAdmin),
+			v.null(),
+		),
+	)
 	},
 	handler: async (ctx, args) => {
 		await ctx.db.insert("users", {
@@ -36,12 +36,12 @@ export const updateUser = internalMutation({
 		image: v.string(),
 		name: v.string(),
 		role: v.optional(
-			v.union(
-				v.literal(UserRole.common),
-				v.literal(UserRole.admin),
-				v.literal(UserRole.superAdmin),
-				v.null(),
-			),
+		v.union(
+			v.literal(UserRole.common),
+			v.literal(UserRole.admin),
+			v.literal(UserRole.superAdmin),
+			v.null(),
+		),
 		)
 	},
 	async handler(ctx, args) {

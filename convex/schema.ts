@@ -1,6 +1,63 @@
 import {defineSchema, defineTable} from "convex/server";
 import {v} from "convex/values";
 import {UserRole} from "../types/roles";
+import {MessageType} from "../types/messages";
+
+const messageTypeLiterals = [
+    v.literal(MessageType.textMessage),
+    v.literal(MessageType.imageMessage),
+    v.literal(MessageType.videoMessage),
+    v.literal(MessageType.documentMessage),
+    v.literal(MessageType.audioMessage),
+] as const;
+
+const textMessageSchema = v.object({
+    content: v.string(),
+});
+
+const imageMessageSchema = v.object({
+    url: v.string(),
+    caption: v.optional(v.string()),
+});
+
+const videoMessageSchema = v.object({
+    url: v.string(),
+    caption: v.optional(v.string()),
+    gifPlayback: v.boolean(),
+});
+
+const audioMessageSchema = v.object({
+    url: v.string(),
+});
+
+const documentMessageSchema = v.object({
+    mimetype: v.string(),
+    url: v.string(),
+    length: v.number(),
+    caption: v.optional(v.string()),
+    largeMediaError: v.optional(v.boolean()),
+    jpegThumbnail: v.optional(v.string()),
+    title: v.string(),
+    pageCount: v.optional(v.number()),
+    fileName: v.optional(v.string()),
+});
+
+const replyParticipantSchema = v.object({
+    _id: v.id("users"),
+    image: v.string(),
+    name: v.optional(v.string()),
+    tokenIdentifier: v.string(),
+    email: v.string(),
+    _creationTime: v.number(),
+    isOnline: v.boolean(),
+});
+
+const replySchema = v.object({
+    messageId: v.id("messages"),
+    quotedConversationType: v.union(...messageTypeLiterals),
+    quotedMessage: v.optional(v.any()),
+    participant: v.optional(replyParticipantSchema),
+});
 
 export default defineSchema({
     users: defineTable({
@@ -29,10 +86,17 @@ export default defineSchema({
 
     messages: defineTable({
         conversation: v.id("conversations"),
-        sender: v.string(), // should be string so that it doesn't throw errors in openai part ("ChatGPT")
-        content: v.string(),
-        messageType: v.union(v.literal("text"), v.literal("image"), v.literal("video"), v.literal("audio")),
+        sender: v.union(v.id("users"), v.literal("ChatGPT")),
+        participant: v.optional(v.id("users")),
+        textMessage: v.optional(textMessageSchema),
+        imageMessage: v.optional(imageMessageSchema),
+        videoMessage: v.optional(videoMessageSchema),
+        documentMessage: v.optional(documentMessageSchema),
+        audioMessage: v.optional(audioMessageSchema),
+        reply: v.optional(replySchema),
+        messageType: v.union(...messageTypeLiterals),
+        receivers: v.optional(v.array(v.id("users"))),
+        readers: v.optional(v.array(v.id("users"))),
         storageId: v.optional(v.id("_storage")),
-    })
-        .index("by_conversation", ["conversation"])
+    }).index("by_conversation", ["conversation"])
 });

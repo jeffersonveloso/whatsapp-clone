@@ -16,6 +16,8 @@ const MediaDropdown = () => {
 	const videoInput = useRef<HTMLInputElement>(null);
 	const [selectedImage, setSelectedImage] = useState<File | null>(null);
 	const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+	const [imageCaption, setImageCaption] = useState("");
+	const [videoCaption, setVideoCaption] = useState("");
 
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -28,6 +30,12 @@ const MediaDropdown = () => {
 
 	const handleSendImage = async () => {
 		if (!selectedImage) return;
+		if (!selectedConversation || !me) {
+			toast.error("Unable to send media right now. Please try again.");
+			return;
+		}
+		const conversationId = selectedConversation._id;
+		const senderId = me._id;
 
 		setIsLoading(true);
 		try {
@@ -43,12 +51,14 @@ const MediaDropdown = () => {
 			const { storageId } = await result.json();
 			// Step 3: Save the newly allocated storage id to the database
 			await sendImage({
-				conversation: selectedConversation!._id,
+				conversation: conversationId,
 				imgId: storageId,
-				sender: me!._id,
+				sender: senderId,
+				caption: imageCaption.trim() || undefined,
 			});
 
 			setSelectedImage(null);
+			setImageCaption("");
 		} catch (err) {
 			toast.error("Failed to send image");
 		} finally {
@@ -58,6 +68,12 @@ const MediaDropdown = () => {
 
 	const handleSendVideo = async () => {
 		if (!selectedVideo) return;
+		if (!selectedConversation || !me) {
+			toast.error("Unable to send media right now. Please try again.");
+			return;
+		}
+		const conversationId = selectedConversation._id;
+		const senderId = me._id;
 
 		setIsLoading(true);
 		try {
@@ -72,11 +88,13 @@ const MediaDropdown = () => {
 
 			await sendVideo({
 				videoId: storageId,
-				conversation: selectedConversation!._id,
-				sender: me!._id,
+				conversation: conversationId,
+				sender: senderId,
+				caption: videoCaption.trim() || undefined,
 			});
 
 			setSelectedVideo(null);
+			setVideoCaption("");
 		} catch (error) {
 			toast.error("Failed to send video");
 		} finally {
@@ -123,8 +141,13 @@ const MediaDropdown = () => {
 			{selectedImage && (
 				<MediaImageDialog
 					isOpen={selectedImage !== null}
-					onClose={() => setSelectedImage(null)}
+					onClose={() => {
+						setSelectedImage(null);
+						setImageCaption("");
+					}}
 					selectedImage={selectedImage}
+					caption={imageCaption}
+					onCaptionChange={setImageCaption}
 					isLoading={isLoading}
 					handleSendImage={handleSendImage}
 				/>
@@ -133,8 +156,13 @@ const MediaDropdown = () => {
 			{selectedVideo && (
 				<MediaVideoDialog
 					isOpen={selectedVideo !== null}
-					onClose={() => setSelectedVideo(null)}
+					onClose={() => {
+						setSelectedVideo(null);
+						setVideoCaption("");
+					}}
 					selectedVideo={selectedVideo}
+					caption={videoCaption}
+					onCaptionChange={setVideoCaption}
 					isLoading={isLoading}
 					handleSendVideo={handleSendVideo}
 				/>
@@ -164,11 +192,13 @@ type MediaImageDialogProps = {
 	isOpen: boolean;
 	onClose: () => void;
 	selectedImage: File;
+	caption: string;
+	onCaptionChange: (value: string) => void;
 	isLoading: boolean;
 	handleSendImage: () => void;
 };
 
-const MediaImageDialog = ({ isOpen, onClose, selectedImage, isLoading, handleSendImage }: MediaImageDialogProps) => {
+const MediaImageDialog = ({ isOpen, onClose, selectedImage, caption, onCaptionChange, isLoading, handleSendImage }: MediaImageDialogProps) => {
 	const [renderedImage, setRenderedImage] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -185,12 +215,12 @@ const MediaImageDialog = ({ isOpen, onClose, selectedImage, isLoading, handleSen
 					if (!isOpen) onClose();
 				}}
 			>
-				<DialogContent className='w-full !max-w-[95vw] sm:!max-w-4xl p-2'>
-					<DialogTitle>Media</DialogTitle>
-					<DialogDescription>Image</DialogDescription>
-					<div className='flex flex-col gap-4 justify-center items-center w-full'>
-						{renderedImage && (
-							<Image
+			<DialogContent className='w-full !max-w-[95vw] sm:!max-w-4xl p-2'>
+				<DialogTitle>Media</DialogTitle>
+				<DialogDescription>Image</DialogDescription>
+				<div className='flex flex-col gap-4 justify-center items-center w-full'>
+					{renderedImage && (
+						<Image
 								src={renderedImage}
 								width={1200}
 								height={675}
@@ -198,13 +228,20 @@ const MediaImageDialog = ({ isOpen, onClose, selectedImage, isLoading, handleSen
 								priority
 								style={{ width: "100%", height: "auto" }}
 							/>
-						)}
-					</div>
-					<Button className='w-full' disabled={isLoading} onClick={handleSendImage}>
-						{isLoading ? "Sending..." : "Send"}
-					</Button>
-				</DialogContent>
-			</Dialog>
+					)}
+				</div>
+				<textarea
+					value={caption}
+					onChange={(e) => onCaptionChange(e.target.value)}
+					placeholder='Add a caption (optional)'
+					className='mt-4 w-full rounded-md border border-gray-300 bg-gray-tertiary p-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-primary dark:border-gray-600 dark:bg-gray-primary'
+					rows={3}
+				/>
+				<Button className='w-full' disabled={isLoading} onClick={handleSendImage}>
+					{isLoading ? "Sending..." : "Send"}
+				</Button>
+			</DialogContent>
+		</Dialog>
 	);
 };
 
@@ -212,11 +249,13 @@ type MediaVideoDialogProps = {
 	isOpen: boolean;
 	onClose: () => void;
 	selectedVideo: File;
+	caption: string;
+	onCaptionChange: (value: string) => void;
 	isLoading: boolean;
 	handleSendVideo: () => void;
 };
 
-const MediaVideoDialog = ({ isOpen, onClose, selectedVideo, isLoading, handleSendVideo }: MediaVideoDialogProps) => {
+const MediaVideoDialog = ({ isOpen, onClose, selectedVideo, caption, onCaptionChange, isLoading, handleSendVideo }: MediaVideoDialogProps) => {
 	const renderedVideo = useMemo(() => {
 		if (!selectedVideo) return null;
 		return URL.createObjectURL(selectedVideo);
@@ -241,6 +280,13 @@ const MediaVideoDialog = ({ isOpen, onClose, selectedVideo, isLoading, handleSen
 				<div className='w-full'>
 					{renderedVideo && <ReactPlayer url={renderedVideo} controls width='100%' />}
 				</div>
+				<textarea
+					value={caption}
+					onChange={(e) => onCaptionChange(e.target.value)}
+					placeholder='Add a caption (optional)'
+					className='mt-4 w-full rounded-md border border-gray-300 bg-gray-tertiary p-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-primary dark:border-gray-600 dark:bg-gray-primary'
+					rows={3}
+				/>
 				<Button className='w-full' disabled={isLoading} onClick={handleSendVideo}>
 					{isLoading ? "Sending..." : "Send"}
 				</Button>
