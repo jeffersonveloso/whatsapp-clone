@@ -184,7 +184,7 @@ const UserListDialog = () => {
 					<span>New Chat</span> <MessageSquareDiff size={16}/>
 				</button>
 			</DialogTrigger>
-			<DialogContent className="w-full !max-w-[95vw] sm:!max-w-4xl p-2">
+			<DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-2">
 				<DialogHeader>
 					<DialogTitle>Users</DialogTitle>
 				</DialogHeader>

@@ -233,18 +233,18 @@ const MediaImageDialog = ({
         if (!isOpen) onClose();
       }}
     >
-      <DialogContent className="w-full !max-w-[95vw] sm:!max-w-4xl p-2">
+      <DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-2">
         <DialogTitle>Media</DialogTitle>
         <DialogDescription>Image</DialogDescription>
         <div className="flex flex-col gap-4 justify-center items-center w-full">
           {renderedImage && (
             <Image
               src={renderedImage}
-              width={600}
-              height={675}
+              fill
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 60vw, 460px"
+              className="rounded-md cursor-pointer object-contain"
               alt="selected image"
               priority
-              style={{ width: "90%", height: "auto" }}
             />
           )}
         </div>
@@ -313,7 +313,7 @@ const MediaVideoDialog = ({
         if (!isOpen) onClose();
       }}
     >
-      <DialogContent className="w-full !max-w-[95vw] sm:!max-w-4xl p-2">
+      <DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-2">
         <DialogTitle>Media</DialogTitle>
         <DialogDescription>Video</DialogDescription>
         <div className="w-full">

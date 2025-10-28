@@ -219,7 +219,7 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
     return (
         <>
             <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-                <DialogContent className="w-full !max-w-[95vw] sm:!max-w-4xl p-2">
+                <DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-2">
                     <DialogTitle>Record Audio</DialogTitle>
                     <DialogDescription asChild>
                         {/* Indicador de gravação */}
