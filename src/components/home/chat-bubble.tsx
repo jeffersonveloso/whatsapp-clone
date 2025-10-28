@@ -230,7 +230,8 @@ const ImageMessage = ({
           className="rounded-md cursor-pointer object-contain"
           alt={image.caption || "Image attachment"}
           onClick={onPreview}
-          onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+          onLoad={(event) => {
+            const { naturalWidth, naturalHeight } = event.currentTarget;
             if (!naturalWidth || !naturalHeight) return;
             const ratio = naturalWidth / naturalHeight;
             if (!Number.isFinite(ratio) || ratio <= 0) return;

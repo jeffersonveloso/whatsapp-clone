@@ -7,11 +7,12 @@ import { UserButton } from "@clerk/nextjs";
 import UserListDialog from "./user-list-dialog";
 import {useConvexAuth, useQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import React, { useEffect } from "react";
+import React, {useCallback, useEffect, useRef} from "react";
 import { useConversationStore } from "@/store/chat-store";
 import SearchBar from "@/components/home/search-bar";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSidebarStore } from "@/store/ui-store";
+import {useRouter, useSearchParams} from "next/navigation";
 
 const LeftPanel = () => {
 	const { isAuthenticated, isLoading } = useConvexAuth();
@@ -19,13 +20,41 @@ const LeftPanel = () => {
 	const { selectedConversation, setSelectedConversation } = useConversationStore();
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 	const { isSidebarOpen, close } = useSidebarStore();
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const conversationIdParam = searchParams?.get("conversationId") ?? null;
+	const selectionOriginRef = useRef<"user" | "route" | null>(null);
+
+	const setConversationParam = useCallback(
+		(conversationId: string | null) => {
+			const currentId = conversationIdParam;
+			if (conversationId === currentId) {
+				return;
+			}
+
+			const currentParams = new URLSearchParams(searchParams?.toString() ?? "");
+			if (conversationId) {
+				currentParams.set("conversationId", conversationId);
+			} else {
+				currentParams.delete("conversationId");
+			}
+
+			const query = currentParams.toString();
+			router.replace(query ? `/?${query}` : "/", { scroll: false });
+		},
+		[conversationIdParam, router, searchParams],
+	);
 
 	useEffect(() => {
 		const conversationIds = conversations?.map((conversation) => conversation._id);
 		if (selectedConversation && conversationIds && !conversationIds.includes(selectedConversation._id)) {
+			selectionOriginRef.current = "route";
 			setSelectedConversation(null);
+			if (conversationIdParam) {
+				setConversationParam(null);
+			}
 		}
-	}, [conversations, selectedConversation, setSelectedConversation]);
+	}, [conversationIdParam, conversations, selectedConversation, setConversationParam, setSelectedConversation]);
 
 	useEffect(() => {
 		if (isDesktop) {
@@ -33,10 +62,60 @@ const LeftPanel = () => {
 		}
 	}, [isDesktop, close]);
 
+	useEffect(() => {
+		if (!conversations) {
+			return;
+		}
+
+		if (!conversationIdParam) {
+			if (selectedConversation) {
+				selectionOriginRef.current = "route";
+				setSelectedConversation(null);
+			}
+			return;
+		}
+
+		const target = conversations.find((conversation) => conversation._id === conversationIdParam);
+		if (target) {
+			if (!selectedConversation || selectedConversation._id !== target._id) {
+				selectionOriginRef.current = "route";
+				setSelectedConversation(target);
+			}
+		} else if (selectedConversation) {
+			selectionOriginRef.current = "route";
+			setSelectedConversation(null);
+		}
+	}, [conversationIdParam, conversations, selectedConversation, setSelectedConversation]);
+
+	useEffect(() => {
+		if (selectionOriginRef.current === "route") {
+			selectionOriginRef.current = null;
+			return;
+		}
+
+		if (selectedConversation && selectedConversation._id !== conversationIdParam) {
+			selectionOriginRef.current = "user";
+			setConversationParam(selectedConversation._id);
+			return;
+		}
+
+		if (!selectedConversation && conversationIdParam) {
+			selectionOriginRef.current = "user";
+			setConversationParam(null);
+			return;
+		}
+
+		if (selectionOriginRef.current === "user") {
+			selectionOriginRef.current = null;
+		}
+	}, [conversationIdParam, selectedConversation, setConversationParam]);
+
 	if (isLoading) return null;
 
 	const handleConversationSelect = (conversation: any) => {
+		selectionOriginRef.current = "user";
 		setSelectedConversation(conversation);
+		setConversationParam(conversation._id);
 		if (!isDesktop) close();
 	};
 

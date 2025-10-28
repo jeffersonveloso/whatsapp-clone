@@ -1,7 +1,7 @@
 import {ConvexError, v} from "convex/values";
 import {mutation, query, MutationCtx, QueryCtx} from "./_generated/server";
-import {api} from "./_generated/api";
-import {Id} from "./_generated/dataModel";
+import {api, internal} from "./_generated/api";
+import {Doc, Id} from "./_generated/dataModel";
 import {MessageType} from "../types/messages";
 
 const replyInputValidator = v.optional(
@@ -109,6 +109,66 @@ const hydrateUserSnapshot = async (
     cache.set(cacheKey, formattedSnapshot);
     return formattedSnapshot;
 };
+
+const truncatePreview = (input: string | undefined) => {
+    if (!input) {
+        return "Nova mensagem";
+    }
+
+    const trimmed = input.trim();
+    if (!trimmed) {
+        return "Nova mensagem";
+    }
+
+    if (trimmed.length <= 160) {
+        return trimmed;
+    }
+
+    return `${trimmed.slice(0, 157)}...`;
+};
+
+const schedulePushNotifications = async (
+    ctx: MutationCtx,
+    params: {
+        conversation: Doc<"conversations">;
+        receivers: Id<"users">[];
+        sender: Doc<"users">;
+        messageType: MessageType;
+        preview: string;
+    }
+) => {
+    if (!params.receivers.length) {
+        return;
+    }
+
+    const senderName = params.sender.name?.trim() || params.sender.email?.trim() || "Nova mensagem";
+    const preview = truncatePreview(params.preview);
+    const title = params.conversation.isGroup ? params.conversation.groupName ?? "Nova mensagem" : senderName;
+    const body = params.conversation.isGroup ? `${senderName}: ${preview}` : preview;
+    const icon = params.conversation.isGroup
+        ? params.conversation.groupImage ?? params.sender.image
+        : params.sender.image;
+
+    const dataPayload = {
+        url: `/?conversationId=${params.conversation._id}`,
+        conversationId: params.conversation._id,
+        messageType: params.messageType,
+    };
+
+    await Promise.all(
+        params.receivers.map((receiverId) =>
+            ctx.scheduler.runAfter(0, internal.push.sendToUser, {
+                userId: receiverId,
+                payload: {
+                    title,
+                    body,
+                    ...(icon ? { icon, badge: icon } : {}),
+                    data: dataPayload,
+                },
+            })
+        )
+    );
+};
 export const sendTextMessage = mutation({
     args: {
         sender: v.id("users"),
@@ -160,6 +220,14 @@ export const sendTextMessage = mutation({
             receivers,
             readers: [user._id],
             reply: replyPayload,
+        });
+
+        await schedulePushNotifications(ctx, {
+            conversation,
+            receivers,
+            sender: user,
+            messageType: MessageType.textMessage,
+            preview: "Mensagem de texto",
         });
 
         // TODO => add @gpt check later
@@ -324,6 +392,14 @@ export const sendImage = mutation({
             readers: [user._id],
             reply: replyPayload,
         });
+
+        await schedulePushNotifications(ctx, {
+            conversation,
+            receivers,
+            sender: user,
+            messageType: MessageType.imageMessage,
+            preview: args.caption ?? "Imagem enviada",
+        });
     },
 });
 
@@ -383,6 +459,14 @@ export const sendVideo = mutation({
             readers: [user._id],
             reply: replyPayload,
         });
+
+        await schedulePushNotifications(ctx, {
+            conversation,
+            receivers,
+            sender: user,
+            messageType: MessageType.videoMessage,
+            preview: args.caption ?? "Vídeo enviado",
+        });
     },
 });
 
@@ -437,6 +521,14 @@ export const sendAudio = mutation({
             receivers,
             readers: [user._id],
             reply: replyPayload,
+        });
+
+        await schedulePushNotifications(ctx, {
+            conversation,
+            receivers,
+            sender: user,
+            messageType: MessageType.audioMessage,
+            preview: "Mensagem de áudio",
         });
     },
 });
@@ -503,7 +595,7 @@ export const clearOldMessages = mutation({
         while (true) {
             const oldBatch = await ctx.db
                 .query("messages")
-                .withIndex("by_creation_time", (q) => q.lt("_creationTime", cutoff))
+                .filter((q) => q.lt(q.field("_creationTime"), cutoff))
                 .take(batchSize);
 
             if (oldBatch.length === 0) {

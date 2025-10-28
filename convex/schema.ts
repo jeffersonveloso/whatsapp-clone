@@ -59,6 +59,15 @@ const replySchema = v.object({
     participant: v.optional(replyParticipantSchema),
 });
 
+const pushSubscriptionSchema = v.object({
+    endpoint: v.string(),
+    expirationTime: v.optional(v.number()),
+    keys: v.object({
+        p256dh: v.string(),
+        auth: v.string(),
+    }),
+});
+
 export default defineSchema({
     users: defineTable({
         name: v.optional(v.string()),
@@ -98,5 +107,12 @@ export default defineSchema({
         receivers: v.optional(v.array(v.id("users"))),
         readers: v.optional(v.array(v.id("users"))),
         storageId: v.optional(v.id("_storage")),
-    }).index("by_conversation", ["conversation"])
+    }).index("by_conversation", ["conversation"]),
+
+    pushSubscriptions: defineTable({
+        userId: v.id("users"),
+        subscription: pushSubscriptionSchema,
+    })
+        .index("by_user", ["userId"])
+        .index("by_user_endpoint", ["userId", "subscription.endpoint"]),
 });
