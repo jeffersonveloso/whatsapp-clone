@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -218,6 +218,7 @@ const MediaImageDialog = ({
   handleSendImage,
 }: MediaImageDialogProps) => {
   const [renderedImage, setRenderedImage] = useState<string | null>(null);
+  const [aspectRatio, setAspectRatio] = useState(4 / 3);
 
   useEffect(() => {
     if (!selectedImage) return;
@@ -226,6 +227,8 @@ const MediaImageDialog = ({
     reader.readAsDataURL(selectedImage);
   }, [selectedImage]);
 
+  const clampedRatio = Math.min(Math.max(aspectRatio, 0.6), 1.5);
+
   return (
     <Dialog
       open={isOpen}
@@ -233,19 +236,30 @@ const MediaImageDialog = ({
         if (!isOpen) onClose();
       }}
     >
-      <DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-2">
+      <DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-4">
         <DialogTitle>Media</DialogTitle>
         <DialogDescription>Image</DialogDescription>
-        <div className="flex flex-col gap-4 justify-center items-center w-full">
+        <div className="flex flex-col gap-4 justify-center items-center w-full overflow">
           {renderedImage && (
-            <Image
-              src={renderedImage}
-              fill
-              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 60vw, 460px"
-              className="rounded-md cursor-pointer object-contain"
-              alt="selected image"
-              priority
-            />
+            <div
+              className="relative w-full max-w-[520px] min-w-[200px] overflow-hidden rounded-md bg-gray-200/30 dark:bg-gray-700/40"
+              style={{ aspectRatio: clampedRatio, maxHeight: "50vh" }}
+            >
+              <Image
+                src={renderedImage}
+                fill
+                sizes="(max-width: 640px) 95vw, (max-width: 1024px) 70vw, 520px"
+                className="object-contain"
+                alt="selected image"
+                priority
+                onLoadingComplete={({ naturalWidth, naturalHeight }) => {
+                  if (!naturalWidth || !naturalHeight) return;
+                  const ratio = naturalWidth / naturalHeight;
+                  if (!Number.isFinite(ratio) || ratio <= 0) return;
+                  setAspectRatio(ratio);
+                }}
+              />
+            </div>
           )}
         </div>
         <div>
@@ -256,6 +270,7 @@ const MediaImageDialog = ({
             placeholder="Add a caption (optional)"
             className="mt-4 w-full rounded-md border border-gray-300 bg-gray-tertiary p-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-primary dark:border-gray-600 dark:bg-gray-primary"
             rows={3}
+            aria-label="Add a caption"
           />
         </div>
 
@@ -313,7 +328,7 @@ const MediaVideoDialog = ({
         if (!isOpen) onClose();
       }}
     >
-      <DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-2">
+      <DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-4">
         <DialogTitle>Media</DialogTitle>
         <DialogDescription>Video</DialogDescription>
         <div className="w-full">
@@ -322,7 +337,7 @@ const MediaVideoDialog = ({
               key={selectedVideo?.name ?? "video-preview"}
               controls
               preload="metadata"
-              className="w-full max-h-[420px] rounded-md bg-black"
+              className="w-full max-h-[50vh] rounded-md bg-black"
             >
               <source
                 src={renderedVideo}
