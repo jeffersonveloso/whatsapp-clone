@@ -161,24 +161,27 @@ const AudioMessage = ({ audio }: { audio?: IMessage["audioMessage"] }) => {
 
 const ImageMessage = ({ image, onPreview }: { image?: IMessage["imageMessage"]; onPreview: () => void }) => {
     if (!image?.url) return null;
-    const [aspectRatio, setAspectRatio] = useState(1);
+    const [aspectRatio, setAspectRatio] = useState(4 / 3);
+    const clampedRatio = Math.min(Math.max(aspectRatio, 0.75), 1.6);
 
     return (
         <div className="flex flex-col gap-2">
             <div
-                className='relative mx-auto w-full max-w-[380px] lg:max-w-[340px] overflow-hidden rounded mt-2'
-                style={{ aspectRatio }}
+                className='relative mx-auto w-full min-w-[180px] max-w-[380px] overflow-hidden rounded mt-2 bg-gray-200/40 dark:bg-gray-700/40'
+                style={{ aspectRatio: clampedRatio }}
             >
                 <Image
                     src={image.url}
                     fill
                     sizes='(max-width: 640px) 70vw, (max-width: 1024px) 50vw, 240px'
-                    className='cursor-pointer object-cover'
+                    className='cursor-pointer object-contain'
                     alt='image'
                     onClick={onPreview}
                     onLoadingComplete={({ naturalWidth, naturalHeight }) => {
                         if (!naturalWidth || !naturalHeight) return;
-                        setAspectRatio(naturalWidth / naturalHeight);
+                        const ratio = naturalWidth / naturalHeight;
+                        if (!Number.isFinite(ratio) || ratio <= 0) return;
+                        setAspectRatio(ratio);
                     }}
                 />
             </div>
