@@ -65,6 +65,7 @@ export const useConversationStore = create<ConversationStore>((set) => ({
 
 export interface IMessage {
   _id: Id<"messages">;
+  conversation: Id<"conversations">;
   textMessage?: TextMessageEntity;
   imageMessage?: ImageMessageEntity;
   videoMessage?: VideoMessageEntity;
@@ -79,7 +80,7 @@ export interface IMessage {
   sender: {
     _id: Id<"users">;
     image: string;
-    name?: string;
+    name: string | undefined;
     tokenIdentifier: string;
     email: string;
     _creationTime: number;
