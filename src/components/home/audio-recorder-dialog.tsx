@@ -25,6 +25,10 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
     const [waveformValues, setWaveformValues] = useState<number[]>(() => Array.from({length: NUM_WAVE_BARS}, () => 0));
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+    const recordingConfigRef = useRef<{mimeType: string; extension: string}>({
+        mimeType: "audio/webm",
+        extension: "webm",
+    });
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const dataArrayRef = useRef<Float32Array | null>(null);
@@ -127,6 +131,10 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
             setAudioURL(null);
             audioChunksRef.current = [];
             mediaRecorderRef.current = null;
+            recordingConfigRef.current = {
+                mimeType: "audio/webm",
+                extension: "webm",
+            };
         }
     }, [isOpen]);
 
@@ -139,14 +147,51 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-            const mediaRecorder = new MediaRecorder(stream);
+            const MediaRecorderCtor = window.MediaRecorder;
+            if (!MediaRecorderCtor) {
+                toast.error("MediaRecorder not supported in this browser");
+                return;
+            }
+
+            const mimeCandidates = [
+                {mimeType: "audio/mp4;codecs=mp4a.40.2", extension: "m4a"},
+                {mimeType: "audio/mp4", extension: "m4a"},
+                {mimeType: "audio/mpeg", extension: "mp3"},
+                {mimeType: "audio/webm;codecs=opus", extension: "webm"},
+                {mimeType: "audio/webm", extension: "webm"},
+            ] as const;
+
+            const supported =
+                mimeCandidates.find((candidate) => {
+                    try {
+                        return typeof MediaRecorderCtor.isTypeSupported === "function"
+                            ? MediaRecorderCtor.isTypeSupported(candidate.mimeType)
+                            : candidate.mimeType.includes("webm");
+                    } catch {
+                        return candidate.mimeType.includes("webm");
+                    }
+                }) ?? {mimeType: "audio/webm", extension: "webm"};
+
+            recordingConfigRef.current = {
+                mimeType: supported.mimeType,
+                extension: supported.extension,
+            };
+
+            let mediaRecorder: MediaRecorder;
+            try {
+                mediaRecorder = new MediaRecorderCtor(stream, {mimeType: supported.mimeType});
+            } catch {
+                recordingConfigRef.current = {mimeType: "audio/webm", extension: "webm"};
+                mediaRecorder = new MediaRecorderCtor(stream);
+            }
+
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
             streamRef.current = stream;
             startWaveform(stream);
             mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
             mediaRecorder.onstop = () => {
-                const blob = new Blob(audioChunksRef.current, {type: "audio/webm"});
+                const blob = new Blob(audioChunksRef.current, {type: recordingConfigRef.current.mimeType});
                 if (blob.size > MAX_AUDIO_SIZE_BYTES) {
                     toast.error("Áudio deve ser menor que 40MB");
                     audioChunksRef.current = [];
@@ -173,8 +218,9 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
         if (!audioChunksRef.current.length) return;
         setIsRecording(false);
         try {
+            const {mimeType, extension} = recordingConfigRef.current;
             // transformar em File para manter compatibilidade
-            const blob = new Blob(audioChunksRef.current, {type: "audio/webm"});
+            const blob = new Blob(audioChunksRef.current, {type: mimeType});
             if (blob.size > MAX_AUDIO_SIZE_BYTES) {
                 toast.error("Áudio deve ser menor que 40MB");
                 setAudioURL(null);
@@ -183,7 +229,8 @@ const AudioRecorderDialog = ({isOpen, onClose}: AudioRecorderDialogProps) => {
             }
 
             setIsLoading(true);
-            const file = new File([blob], `audio_${Date.now()}.webm`, {type: "audio/webm"});
+            const fileName = `audio_${Date.now()}.${extension}`;
+            const file = new File([blob], fileName, {type: mimeType});
 
             // 1) gerar URL de upload
             const postUrl = await generateUploadUrl();

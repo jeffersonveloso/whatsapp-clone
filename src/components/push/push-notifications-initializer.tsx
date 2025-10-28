@@ -31,6 +31,10 @@ const PushNotificationsInitializer = () => {
 
         const persistSubscription = async (subscription: PushSubscription) => {
             const json = subscription.toJSON();
+            if (!json.endpoint) {
+                console.warn("Push subscription missing endpoint.");
+                return;
+            }
             await saveSubscription({
                 subscription: {
                     endpoint: json.endpoint,
