@@ -57,7 +57,7 @@ const RightPanel = () => {
 						</a>*/}
 						 <Button
                             size={"sm"}
-                            variant={"default"} 
+                            className='bg-transparent text-foreground hover:bg-transparent'
 							onClick={() => {
 								setSelectedConversation(null);
 								closeSidebar();

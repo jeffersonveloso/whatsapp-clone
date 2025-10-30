@@ -149,13 +149,15 @@ const MessageInput = () => {
                         <Button
                             type='submit'
                             size={"sm"}
+                            className='bg-transparent text-foreground hover:bg-transparent'
                         >
-                            <Send/>
+                            <SendHorizonal/>
                         </Button>
                     ) : (
                         <Button
                             type='button'
                             size={"sm"}
+                            className='bg-transparent text-foreground hover:bg-transparent'
                             onClick={() => setIsAudioOpen(true)}  // abre o diálogo
                         >
                             <Mic/>
