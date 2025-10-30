@@ -21,10 +21,10 @@ const RightPanel = () => {
 	const conversationImage = selectedConversation.groupImage || selectedConversation.image;
 
 	return (
-		<div className='w-full flex flex-col'>
-			<div className='w-full sticky top-0 z-50'>
+		<div className='flex flex-1 min-h-0 w-full flex-col'>
+			<div className='sticky top-0 z-50 bg-gray-primary'>
 				{/* Header */}
-				<div className='flex justify-between bg-gray-primary p-3'>
+				<div className='flex justify-between p-3'>
 					<div className='flex gap-3 items-center'>
 						<button
 							type='button'

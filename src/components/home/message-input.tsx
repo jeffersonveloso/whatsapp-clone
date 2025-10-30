@@ -49,7 +49,7 @@ const MessageInput = () => {
     const replyPreview = replyToMessage ? getReplyPreview(replyToMessage, me?._id, clearReplyToMessage) : null;
 
     return (
-        <div className='bg-gray-primary p-2 flex gap-4 items-center'>
+        <div className='bg-gray-primary p-2 flex gap-4 items-center shrink-0'>
             <div className='relative flex gap-2 ml-2'>
                 {/* EMOJI PICKER WILL GO HERE */}
                 <div ref={ref} onClick={() => setIsComponentVisible(true)}>
@@ -72,7 +72,7 @@ const MessageInput = () => {
                     <Input
                         type='text'
                         placeholder='Type a message'
-                        className='py-2 text-sm w-full rounded-lg shadow-sm bg-gray-tertiary focus-visible:ring-transparent'
+                        className='py-2 w-full rounded-lg shadow-sm bg-gray-tertiary focus-visible:ring-transparent'
                         value={msgText}
                         onChange={(e) => setMsgText(e.target.value)}
                     />

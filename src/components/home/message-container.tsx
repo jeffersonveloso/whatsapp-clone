@@ -24,7 +24,7 @@ const MessageContainer = () => {
 	}, [safeMessages]);
 
 	return (
-		<div className='relative p-2 flex-1 overflow-y-auto overflow-x-hidden h-full bg-chat-tile-light dark:bg-chat-tile-dark'>
+		<div className='relative p-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden h-full bg-chat-tile-light dark:bg-chat-tile-dark'>
 			<div className='mx-3 flex flex-col gap-3'>
 				{safeMessages.map((msg, idx) => (
 					<div key={msg._id} ref={lastMessageRef}>
