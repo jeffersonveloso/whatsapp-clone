@@ -137,13 +137,14 @@ const schedulePushNotifications = async (
         preview: string;
     }
 ) => {
+    const senderId = params.sender._id.toString();
     const uniqueReceivers = Array.from(
-        new Set(
-            params.receivers
-                .filter((receiverId) => receiverId !== params.sender._id)
-                .map((receiverId) => receiverId.toString())
-        )
-    ).map((receiverId) => receiverId as Id<"users">);
+        new Map(
+            params.receivers.map((receiverId) => [receiverId.toString(), receiverId as Id<"users">])
+        ).values()
+    ).filter((receiverId) => receiverId.toString() !== senderId);
+
+    console.log(uniqueReceivers)
 
     if (!uniqueReceivers.length) {
         return;
