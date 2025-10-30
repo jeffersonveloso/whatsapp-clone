@@ -144,8 +144,6 @@ const schedulePushNotifications = async (
         ).values()
     ).filter((receiverId) => receiverId.toString() !== senderId);
 
-    console.log(uniqueReceivers)
-
     if (!uniqueReceivers.length) {
         return;
     }
