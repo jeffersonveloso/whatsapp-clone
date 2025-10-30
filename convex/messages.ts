@@ -137,7 +137,15 @@ const schedulePushNotifications = async (
         preview: string;
     }
 ) => {
-    if (!params.receivers.length) {
+    const uniqueReceivers = Array.from(
+        new Set(
+            params.receivers
+                .filter((receiverId) => receiverId !== params.sender._id)
+                .map((receiverId) => receiverId.toString())
+        )
+    ).map((receiverId) => receiverId as Id<"users">);
+
+    if (!uniqueReceivers.length) {
         return;
     }
 
@@ -156,7 +164,7 @@ const schedulePushNotifications = async (
     };
 
     await Promise.all(
-        params.receivers.map((receiverId) =>
+        uniqueReceivers.map((receiverId) =>
             ctx.scheduler.runAfter(0, internal.push.sendToUser, {
                 userId: receiverId,
                 payload: {

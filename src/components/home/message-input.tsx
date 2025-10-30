@@ -1,6 +1,5 @@
-import {Laugh, Mic, Send, X} from "lucide-react";
-import {Input} from "../ui/input";
-import {useState} from "react";
+import {Laugh, Mic, Send, SendHorizonal, X} from "lucide-react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Button} from "../ui/button";
 import {useMutation, useQuery} from "convex/react";
 import {api} from "../../../convex/_generated/api";
@@ -19,10 +18,30 @@ const MessageInput = () => {
     const {selectedConversation, replyToMessage, clearReplyToMessage} = useConversationStore();
     const {ref, isComponentVisible, setIsComponentVisible} = useComponentVisible(false);
 
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
     const me = useQuery(api.users.getMe);
     const sendTextMsg = useMutation(api.messages.sendTextMessage);
 
-    const handleSendTextMsg = async (e: React.FormEvent) => {
+    const isMobileKeyboard = useMemo(
+        () => (typeof navigator !== "undefined" ? /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) : false),
+        [],
+    );
+
+    const adjustTextareaSize = useCallback(() => {
+        if (typeof window === "undefined") return;
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = "auto";
+        const computedLineHeight = parseInt(window.getComputedStyle(el).lineHeight || "20", 10);
+        const lineHeight = Number.isFinite(computedLineHeight) && computedLineHeight > 0 ? computedLineHeight : 20;
+        const maxHeight = lineHeight * 3;
+        const nextHeight = Math.min(el.scrollHeight, maxHeight);
+        el.style.height = `${nextHeight}px`;
+        el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+    }, []);
+
+    const handleSendTextMsg = useCallback(async (e: React.FormEvent | { preventDefault: () => void }) => {
         e.preventDefault();
         const trimmed = msgText.trim();
         if (!trimmed) return;
@@ -40,13 +59,53 @@ const MessageInput = () => {
             });
             setMsgText("");
             clearReplyToMessage();
+            requestAnimationFrame(adjustTextareaSize);
         } catch (err: any) {
             toast.error(err.message);
             console.error(err);
         }
-    };
+    }, [adjustTextareaSize, clearReplyToMessage, me, msgText, replyToMessage, selectedConversation, sendTextMsg]);
 
     const replyPreview = replyToMessage ? getReplyPreview(replyToMessage, me?._id, clearReplyToMessage) : null;
+
+    const handleChange = useCallback(
+        (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+            setMsgText(event.target.value);
+            requestAnimationFrame(adjustTextareaSize);
+        },
+        [adjustTextareaSize],
+    );
+
+    const handleKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            if (event.key !== "Enter" || event.shiftKey) {
+                return;
+            }
+
+            if (isMobileKeyboard) {
+                event.preventDefault();
+                const {selectionStart, selectionEnd, value} = event.currentTarget;
+                const newValue = `${value.slice(0, selectionStart)}\n${value.slice(selectionEnd)}`;
+                event.currentTarget.value = newValue;
+                setMsgText(newValue);
+                requestAnimationFrame(() => {
+                    const cursor = selectionStart + 1;
+                    event.currentTarget.selectionStart = cursor;
+                    event.currentTarget.selectionEnd = cursor;
+                    adjustTextareaSize();
+                });
+                return;
+            }
+
+            event.preventDefault();
+            void handleSendTextMsg(event);
+        },
+        [adjustTextareaSize, handleSendTextMsg, isMobileKeyboard],
+    );
+
+    useEffect(() => {
+        adjustTextareaSize();
+    }, [adjustTextareaSize, msgText]);
 
     return (
         <div className='bg-gray-primary p-2 flex gap-4 items-center shrink-0'>
@@ -57,7 +116,11 @@ const MessageInput = () => {
                         <EmojiPicker
                             theme={Theme.DARK}
                             onEmojiClick={(emojiObject) => {
-                                setMsgText((prev) => prev + emojiObject.emoji);
+                                setMsgText((prev) => {
+                                    const nextValue = prev + emojiObject.emoji;
+                                    requestAnimationFrame(adjustTextareaSize);
+                                    return nextValue;
+                                });
                             }}
                             style={{position: "absolute", bottom: "1.5rem", left: "1rem", zIndex: 50}}
                         />
@@ -69,12 +132,16 @@ const MessageInput = () => {
             <form onSubmit={handleSendTextMsg} className='w-full flex gap-3'>
                 <div className='flex-1 flex flex-col gap-2'>
                     {replyPreview}
-                    <Input
-                        type='text'
+                    <textarea
+                        ref={textareaRef}
+                        rows={1}
                         placeholder='Type a message'
-                        className='py-2 w-full rounded-lg shadow-sm bg-gray-tertiary focus-visible:ring-transparent'
+                        className='py-2 w-full rounded-lg shadow-sm bg-gray-tertiary focus-visible:ring-transparent resize-none h-auto min-h-[40px] p-2 text-left'
                         value={msgText}
-                        onChange={(e) => setMsgText(e.target.value)}
+                        onChange={handleChange}
+                        onKeyDown={handleKeyDown}
+                        autoComplete='off'
+                        style={{overflow: "hidden"}}
                     />
                 </div>
                 <div className='mr-4 flex items-center gap-3'>
@@ -82,7 +149,6 @@ const MessageInput = () => {
                         <Button
                             type='submit'
                             size={"sm"}
-                            className='bg-transparent text-foreground hover:bg-transparent'
                         >
                             <Send/>
                         </Button>
@@ -90,7 +156,6 @@ const MessageInput = () => {
                         <Button
                             type='button'
                             size={"sm"}
-                            className='bg-transparent text-foreground hover:bg-transparent'
                             onClick={() => setIsAudioOpen(true)}  // abre o diálogo
                         >
                             <Mic/>

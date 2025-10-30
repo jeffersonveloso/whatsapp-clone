@@ -8,11 +8,14 @@ import GroupMembersDialog from "./group-members-dialog";
 import { useConversationStore } from "@/store/chat-store";
 import {useConvexAuth} from "convex/react";
 import { useSidebarStore } from "@/store/ui-store";
+import {useRouter} from "next/navigation";
+import { Button } from "../ui/button";
 
 const RightPanel = () => {
-	const { selectedConversation, setSelectedConversation } = useConversationStore();
-	const {isLoading } = useConvexAuth();
-	const { toggle: toggleSidebar, close: closeSidebar } = useSidebarStore();
+    const { selectedConversation, setSelectedConversation } = useConversationStore();
+    const {isLoading } = useConvexAuth();
+    const { toggle: toggleSidebar, close: closeSidebar } = useSidebarStore();
+    const router = useRouter();
 
 	if (isLoading) return null;
 	if (!selectedConversation) return <ChatPlaceHolder onOpenSidebar={toggleSidebar} />;
@@ -52,14 +55,18 @@ const RightPanel = () => {
 						{/*<a href='/video-call' target='_blank'>
 							<Video size={23} />
 						</a>*/}
-						<X
-							size={16}
-							className='cursor-pointer'
+						 <Button
+                            size={"sm"}
+                            variant={"default"} 
 							onClick={() => {
 								setSelectedConversation(null);
 								closeSidebar();
+								router.replace("/", {scroll: false});
 							}}
-						/>
+                        >
+                            <X/>
+                        </Button>
+						
 					</div>
 				</div>
 			</div>
