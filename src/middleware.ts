@@ -2,15 +2,25 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 const isProtectedRoute = createRouteMatcher(['/(.*)'])
 
-export default clerkMiddleware(async (auth, req) => {
-	const { userId, redirectToSignIn } = await auth()
+const publicUrl = process.env.NEXT_PUBLIC_APP_URL!;
 
-	if (!userId && isProtectedRoute(req)) {
-		// Add custom logic to run before redirecting
+const authorizedParties =
+	process.env.NODE_ENV === 'production'
+		? [ publicUrl,  publicUrl.replace("https://", "https://accounts.")]
+		: ["http://localhost:3003"];
 
-		return redirectToSignIn()
-	}
-})
+export default clerkMiddleware(
+	async (auth, req) => {
+		const { userId, redirectToSignIn } = await auth()
+
+		if (!userId && isProtectedRoute(req)) {
+			// Add custom logic to run before redirecting
+
+			return redirectToSignIn()
+		}
+	},
+	{ authorizedParties }
+)
 
 export const config = {
 	matcher: [
@@ -20,3 +30,5 @@ export const config = {
 		'/(api|trpc)(.*)',
 	],
 }
+
+
