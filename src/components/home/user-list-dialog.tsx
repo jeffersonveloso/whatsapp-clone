@@ -226,7 +226,7 @@ const UserListDialog = () => {
 				/>
 
 				<div
-					className='flex flex-col gap-3 overflow-auto max-h-60 border-2 rounded-md bg-gray-100'
+					className='flex flex-col gap-3 overflow-auto max-h-60 border-2 rounded-md bg-gray-tertiary'
 					onScroll={handleScroll}
 				>
 					{users?.map((user) => (

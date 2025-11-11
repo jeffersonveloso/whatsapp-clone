@@ -116,7 +116,7 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 							/>
 						</div>
 						<div
-							className='flex flex-col gap-3 border-2 rounded-md bg-gray-100 max-h-60 overflow-auto'
+							className='flex flex-col gap-3 border-2 rounded-md bg-gray-tertiary max-h-60 overflow-auto'
 							onScroll={handleScroll}
 						>
 							{users?.map((user) => (
@@ -144,9 +144,9 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 										</AvatarFallback>
 									</Avatar>
 
-									<div className='w-full '>
+									<div className='w-full'>
 										<div className='flex items-center justify-between'>
-											<p className='text-md font-medium'>{user.name || user?.email?.split("@")[0]}</p>
+											<h3 className='text-md font-medium'>{user.name || user?.email?.split("@")[0]}</h3>
 										</div>
 									</div>
 								</div>

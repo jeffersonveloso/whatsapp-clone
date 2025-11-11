@@ -38,17 +38,24 @@ export type Conversation = {
   };
 };
 
+type PendingMessagesMap = Record<string, IMessage[]>;
+
 type ConversationStore = {
   selectedConversation: Conversation | null;
   replyToMessage: IMessage | null;
+  pendingMessages: PendingMessagesMap;
   setSelectedConversation: (conversation: Conversation | null) => void;
   setReplyToMessage: (message: IMessage | null) => void;
   clearReplyToMessage: () => void;
+  addPendingMessage: (conversationId: Id<"conversations">, message: IMessage) => void;
+  removePendingMessage: (conversationId: Id<"conversations">, messageId: IMessage["_id"]) => void;
+  clearPendingMessages: (conversationId: Id<"conversations">) => void;
 };
 
 export const useConversationStore = create<ConversationStore>((set) => ({
   selectedConversation: null,
   replyToMessage: null,
+  pendingMessages: {},
   setSelectedConversation: (conversation) =>
     set((state) => ({
       selectedConversation: conversation,
@@ -61,6 +68,38 @@ export const useConversationStore = create<ConversationStore>((set) => ({
     })),
   setReplyToMessage: (message) => set({ replyToMessage: message }),
   clearReplyToMessage: () => set({ replyToMessage: null }),
+  addPendingMessage: (conversationId, message) =>
+    set((state) => {
+      const existing = state.pendingMessages[conversationId] ?? [];
+      return {
+        pendingMessages: {
+          ...state.pendingMessages,
+          [conversationId]: [...existing, message],
+        },
+      };
+    }),
+  removePendingMessage: (conversationId, messageId) =>
+    set((state) => {
+      const existing = state.pendingMessages[conversationId];
+      if (!existing) return {};
+
+      const remaining = existing.filter((msg) => msg._id !== messageId);
+      const nextPending = { ...state.pendingMessages };
+      if (remaining.length) {
+        nextPending[conversationId] = remaining;
+      } else {
+        delete nextPending[conversationId];
+      }
+
+      return { pendingMessages: nextPending };
+    }),
+  clearPendingMessages: (conversationId) =>
+    set((state) => {
+      if (!state.pendingMessages[conversationId]) return {};
+      const nextPending = { ...state.pendingMessages };
+      delete nextPending[conversationId];
+      return { pendingMessages: nextPending };
+    }),
 }));
 
 export interface IMessage {

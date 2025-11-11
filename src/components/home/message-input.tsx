@@ -15,7 +15,15 @@ const MessageInput = () => {
     const [isAudioOpen, setIsAudioOpen] = useState(false); // estado para o diálogo
 
     const [msgText, setMsgText] = useState("");
-    const {selectedConversation, replyToMessage, clearReplyToMessage} = useConversationStore();
+    const [isSending, setIsSending] = useState(false);
+    const {
+        selectedConversation,
+        replyToMessage,
+        clearReplyToMessage,
+        addPendingMessage,
+        removePendingMessage,
+        setReplyToMessage,
+    } = useConversationStore();
     const {ref, isComponentVisible, setIsComponentVisible} = useComponentVisible(false);
 
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -43,6 +51,8 @@ const MessageInput = () => {
 
     const handleSendTextMsg = useCallback(async (e: React.FormEvent | { preventDefault: () => void }) => {
         e.preventDefault();
+        if (isSending) return;
+
         const trimmed = msgText.trim();
         if (!trimmed) return;
         if (!selectedConversation || !me) {
@@ -50,21 +60,73 @@ const MessageInput = () => {
             return;
         }
 
+        const conversationId = selectedConversation._id;
+        const replySnapshot = replyToMessage ?? null;
+        const tempId = `temp-${Date.now()}-${Math.random()}` as IMessage["_id"];
+        const optimisticMessage: IMessage = {
+            _id: tempId,
+            conversation: conversationId,
+            textMessage: {content: trimmed},
+            messageType: MessageType.textMessage,
+            sender: {
+                _id: me._id,
+                image: me.image || "",
+                name: me.name,
+                tokenIdentifier: me.tokenIdentifier,
+                email: me.email!,
+                _creationTime: me._creationTime,
+                isOnline: me.isOnline,
+            },
+            _creationTime: Date.now(),
+            reply: replySnapshot
+                ? {
+                    messageId: replySnapshot._id,
+                    quotedConversationType: replySnapshot.messageType,
+                    quotedMessage: replySnapshot[replySnapshot.messageType] ?? undefined,
+                    participant: replySnapshot.sender,
+                }
+                : undefined,
+        };
+
+        addPendingMessage(conversationId, optimisticMessage);
+        setMsgText("");
+        clearReplyToMessage();
+        requestAnimationFrame(adjustTextareaSize);
+        setIsSending(true);
+
         try {
             await sendTextMsg({
                 content: trimmed,
-                conversation: selectedConversation._id,
+                conversation: conversationId,
                 sender: me._id,
-                replyTo: replyToMessage ? { messageId: replyToMessage._id } : undefined,
+                replyTo: replySnapshot ? {messageId: replySnapshot._id} : undefined,
             });
-            setMsgText("");
-            clearReplyToMessage();
-            requestAnimationFrame(adjustTextareaSize);
+            removePendingMessage(conversationId, tempId);
         } catch (err: any) {
+            removePendingMessage(conversationId, tempId);
+            setMsgText(trimmed);
+            if (replySnapshot) {
+                setReplyToMessage(replySnapshot);
+            }
+            requestAnimationFrame(adjustTextareaSize);
             toast.error(err.message);
             console.error(err);
+        } finally {
+            setIsSending(false);
         }
-    }, [adjustTextareaSize, clearReplyToMessage, me, msgText, replyToMessage, selectedConversation, sendTextMsg]);
+    }, [
+        addPendingMessage,
+        adjustTextareaSize,
+        clearReplyToMessage,
+        isSending,
+        me,
+        msgText,
+        removePendingMessage,
+        replyToMessage,
+        selectedConversation,
+        sendTextMsg,
+        setReplyToMessage,
+    ]);
 
     const replyPreview = replyToMessage ? getReplyPreview(replyToMessage, me?._id, clearReplyToMessage) : null;
 
@@ -150,6 +212,7 @@ const MessageInput = () => {
                             type='submit'
                             size={"sm"}
                             className='bg-transparent text-foreground hover:bg-transparent'
+                            disabled={isSending}
                         >
                             <SendHorizonal/>
                         </Button>

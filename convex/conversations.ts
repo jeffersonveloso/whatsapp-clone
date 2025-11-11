@@ -14,16 +14,21 @@ export const upsertConversation = mutation({
 		const identity = await ctx.auth.getUserIdentity();
 		if (!identity) throw new ConvexError("Unauthorized");
 
-		const existingConversation = await ctx.db
+	const normalizedParticipants = [...args.participants].sort((a, b) => a.localeCompare(b));
+
+	let existingConversation = args._id ? await ctx.db.get(args._id) : null;
+
+	if (!existingConversation) {
+		existingConversation = await ctx.db
 			.query("conversations")
 			.filter((q) =>
 				q.or(
-					q.eq(q.field("participants"), args.participants),
-					q.eq(q.field("participants"), args.participants.reverse()),
-					q.eq(q.field("_id"), args._id)
+					q.eq(q.field("participants"), normalizedParticipants),
+					q.eq(q.field("participants"), args.participants)
 				)
 			)
 			.first();
+	}
 
 		let groupImage;
 
@@ -32,18 +37,19 @@ export const upsertConversation = mutation({
 		}
 
 		if (existingConversation) {
-			await ctx.db.patch(existingConversation._id, {
-				groupName: args.groupName ? args.groupName : existingConversation.groupName,
-				isGroup: existingConversation.isGroup,
-				groupImage: groupImage ? groupImage : existingConversation.groupImage,
-				admins: existingConversation.admins,
-			});
+		await ctx.db.patch(existingConversation._id, {
+			groupName: args.groupName ?? existingConversation.groupName,
+			isGroup: existingConversation.isGroup,
+			groupImage: groupImage ?? existingConversation.groupImage,
+			admins: args.admins ?? existingConversation.admins,
+			participants: normalizedParticipants ?? existingConversation.participants,
+		});
 
 			return existingConversation._id;
 		}
 
-		return await ctx.db.insert("conversations", {
-			participants: args.participants,
+	return await ctx.db.insert("conversations", {
+		participants: normalizedParticipants,
 			isGroup: args.isGroup,
 			groupName: args.groupName,
 			groupImage,
@@ -73,6 +79,24 @@ export const addConversationParticipants = mutation({
 		});
 
 		return conversation._id;
+	},
+});
+
+export const updateAdmins = mutation({
+	args: {
+		conversationId: v.id("conversations"),
+		admins: v.array(v.id("users")),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new ConvexError("Unauthorized");
+
+		const conversation = await ctx.db.get(args.conversationId);
+		if (!conversation) throw new ConvexError("Conversation not found");
+
+		await ctx.db.patch(args.conversationId, {
+			admins: args.admins,
+		});
 	},
 });
 

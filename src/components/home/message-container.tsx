@@ -5,7 +5,7 @@ import { IMessage, useConversationStore } from "@/store/chat-store";
 import { useEffect, useMemo, useRef } from "react";
 
 const MessageContainer = () => {
-	const { selectedConversation } = useConversationStore();
+	const { selectedConversation, pendingMessages } = useConversationStore();
 	const messages = useQuery(api.messages.getMessages, {
 		conversation: selectedConversation!._id,
 	});
@@ -17,21 +17,30 @@ const MessageContainer = () => {
 		return messages.filter((message) => Boolean(message?.sender)) as IMessage[];
 	}, [messages]);
 
+	const optimisticMessages = useMemo(() => {
+		if (!selectedConversation) return [];
+		return pendingMessages[selectedConversation._id] ?? [];
+	}, [pendingMessages, selectedConversation]);
+
+	const allMessages = useMemo(() => {
+		return [...safeMessages, ...optimisticMessages];
+	}, [optimisticMessages, safeMessages]);
+
 	useEffect(() => {
 		setTimeout(() => {
 			lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
 		}, 100);
-	}, [safeMessages]);
+	}, [allMessages]);
 
 	return (
 		<div className='relative p-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden h-full bg-chat-tile-light dark:bg-chat-tile-dark'>
 			<div className='mx-3 flex flex-col gap-3'>
-				{safeMessages.map((msg, idx) => (
+				{allMessages.map((msg, idx) => (
 					<div key={msg._id} ref={lastMessageRef}>
 						<ChatBubble
 							message={msg}
 							me={me}
-							previousMessage={idx > 0 ? safeMessages[idx - 1] : undefined}
+							previousMessage={idx > 0 ? allMessages[idx - 1] : undefined}
 						/>
 					</div>
 				))}

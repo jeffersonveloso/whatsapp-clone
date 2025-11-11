@@ -44,6 +44,7 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
 
     const kickUser = useMutation(api.conversations.kickUser);
     const upsertConversation = useMutation(api.conversations.upsertConversation);
+    const updateAdmins = useMutation(api.conversations.updateAdmins);
     const {setSelectedConversation} = useConversationStore();
 
     const itemsPerPage = 5;
@@ -105,12 +106,9 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
             ? [...new Set([...selectedConversation.admins ?? [], userId])]
             : selectedConversation?.admins?.filter((id) => id !== userId);
         try {
-            await upsertConversation({
-                _id: selectedConversation._id,
-                isGroup: true,
-                groupName: selectedConversation.groupName,
-                admins: newAdmins,
-                participants: selectedConversation.participants,
+            await updateAdmins({
+                conversationId: selectedConversation._id,
+                admins: newAdmins ?? [],
             });
             setSelectedConversation({...selectedConversation, admins: newAdmins});
         } catch {
@@ -195,7 +193,7 @@ const GroupMembersDialog = ({selectedConversation}: GroupMembersDialogProps) => 
                             </div>
 
                             <div
-					            className='flex flex-col gap-3 border-2 rounded-md bg-gray-100 max-h-60 overflow-auto'
+					            className='flex flex-col gap-3 border-2 rounded-md bg-gray-tertiary max-h-60 overflow-auto'
                                 onScroll={handleScroll}
                             >
                                 {displayedUsers.map((user) => (
