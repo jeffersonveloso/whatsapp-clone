@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { ReactNode, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Dialog,
@@ -12,7 +12,7 @@ import {
 import { Button } from "../ui/button";
 import {  MessageSquareDiff } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
-import {useMutation, usePaginatedQuery, useQuery} from "convex/react";
+import {useMutation, usePaginatedQuery} from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import toast from "react-hot-toast";
 import {Conversation, useConversationStore} from "@/store/chat-store";
@@ -21,12 +21,11 @@ import SearchBar from "@/components/home/search-bar";
 
 type UpdateGroupMembersDialogProps = {
 	selectedConversation: Conversation;
+	trigger?: ReactNode;
 };
 const PAGE_SIZE = 30;
 
-const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDialogProps) => {
-	const members = useQuery(api.users.getGroupMembers, { conversationId: selectedConversation._id });
-
+const UpdateGroupMembersDialog = ({ selectedConversation, trigger }: UpdateGroupMembersDialogProps) => {
 	const [selectedUsers, setSelectedUsers] = useState<Id<"users">[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [searchParam, setSearchParam] = useState("");
@@ -40,16 +39,12 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 	// pesquisa e infinite query
 	const { results, status, loadMore } = usePaginatedQuery(
 		api.users.pagedUsers, // Your paginated query function
-		{search: searchText}, // Any additional arguments for your query, e.g., { category: "books" }
+		{search: searchText, conversationId: selectedConversation._id}, // Any additional arguments for your query, e.g., { category: "books" }
 		{ initialNumItems: PAGE_SIZE } // Initial number of items to load
 	);
 
 	// Achata todas as páginas em um array só
-	let users = results?.flatMap((p) => p) ?? [];
-
-	if(users && members) {
-		users = users.filter((entry) => !members.find((row) => row._id === entry._id));
-	}
+	const users = results?.flatMap((p) => p) ?? [];
 
 	const { setSelectedConversation } = useConversationStore();
 
@@ -94,63 +89,105 @@ const UpdateGroupMembersDialog = ({ selectedConversation }: UpdateGroupMembersDi
 
 	return (
 		<Dialog>
-			<DialogTrigger>
-				<p className='text-xs text-muted-foreground text-left flex items-center space-x-1'>Add members <MessageSquareDiff size={16}/></p>
+			<DialogTrigger asChild>
+				{trigger ?? (
+					<p className='text-xs text-muted-foreground text-left flex items-center space-x-1'>
+						Add members <MessageSquareDiff size={16} />
+					</p>
+				)}
 			</DialogTrigger>
-			<DialogContent className="w-full !max-w-[90vw] sm:!max-w-4xl p-2">
-					<div className="flex max-h-[80vh] flex-col gap-4 overflow-hidden">
-						<DialogHeader>
-							{/* TODO: <DialogClose /> will be here */}
-							<DialogClose ref={dialogCloseRef} />
-							<DialogTitle>Users</DialogTitle>
-							<DialogDescription>Add new members to the group</DialogDescription>
+			<DialogContent className="w-full !max-w-[96vw] sm:!max-w-5xl p-0 border border-border bg-background text-foreground rounded-2xl shadow-2xl z-[130]">
+					<div className="flex max-h-[85vh] flex-col gap-5 overflow-hidden p-6 bg-card">
+						<DialogHeader className='relative pb-2 text-center'>
+							<DialogClose ref={dialogCloseRef} className='absolute right-0 top-0' />
+							<div className='flex flex-col items-center gap-3'>
+								<Avatar className='h-16 w-16'>
+									<AvatarImage
+										src={selectedConversation.groupImage || selectedConversation.image || "/placeholder.png"}
+										className='object-cover'
+									/>
+									<AvatarFallback>
+										<div className='h-full w-full rounded-full bg-gray-tertiary' />
+									</AvatarFallback>
+								</Avatar>
+								<div>
+									<DialogTitle className='text-lg'>
+										{selectedConversation.groupName || "Add members"}
+									</DialogTitle>
+									<DialogDescription>
+										Add new members to the group
+									</DialogDescription>
+								</div>
+							</div>
 						</DialogHeader>
 
-						{/* Search */}
-						<div className="px-3">
+						<div className='flex flex-col gap-4 rounded-xl border border-border/60 bg-background/60 p-4 shadow-inner'>
+							<div className='flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground'>
+								<p>
+									Selecione usuários para adicionar ao grupo.{" "}
+									<span className='font-semibold text-foreground'>
+										{selectedUsers.length} selecionado(s)
+									</span>
+								</p>
+								{selectedUsers.length > 0 && (
+									<Button variant='ghost' size='sm' onClick={() => setSelectedUsers([])}>
+										Limpar seleção
+									</Button>
+								)}
+							</div>
 							<SearchBar
-								placeholder="Search users…"
+								placeholder="Pesquisar usuários…"
 								filterText={searchParam}
 								onFilterTextChange={handleSearchChange}
-								className="relative h-10 mx-3 flex-1"
 							/>
 						</div>
-						<div
-							className='flex flex-col gap-3 border-2 rounded-md bg-gray-tertiary max-h-60 overflow-auto'
-							onScroll={handleScroll}
-						>
-							{users?.map((user) => (
-								<div
-									key={user._id}
-									className={`flex gap-3 items-center p-2 rounded cursor-pointer active:scale-95 
-										transition-all ease-in-out duration-300
-									${selectedUsers.includes(user._id) ? "bg-green-primary" : ""}`}
-									onClick={() => {
-										if (selectedUsers.includes(user._id)) {
-											setSelectedUsers(selectedUsers.filter((id) => id !== user._id));
-										} else {
-											setSelectedUsers([...selectedUsers, user._id]);
-										}
-									}}
-								>
-									<Avatar className='overflow-visible'>
-										{user.isOnline && (
-											<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
-										)}
+						<div className='flex-1 overflow-hidden'>
+							<div
+								className='h-full space-y-3 overflow-y-auto rounded-2xl border border-border/80 bg-muted/60 dark:bg-muted/20 p-3 shadow'
+								onScroll={handleScroll}
+							>
+								{users?.length === 0 && (
+									<p className='py-10 text-center text-sm text-muted-foreground'>
+										Nenhum usuário encontrado.
+									</p>
+								)}
+								{users?.map((user) => (
+									<div
+										key={user._id}
+										className={`flex gap-3 items-center rounded-xl border border-border/50 bg-card p-3 transition hover:border-border hover:bg-card/80 dark:bg-gray-900/60 ${selectedUsers.includes(user._id) ? "ring-2 ring-emerald-500" : ""}`}
+										onClick={() => {
+											if (selectedUsers.includes(user._id)) {
+												setSelectedUsers(selectedUsers.filter((id) => id !== user._id));
+											} else {
+												setSelectedUsers([...selectedUsers, user._id]);
+											}
+										}}
+										role='button'
+										tabIndex={0}
+									>
+										<Avatar className='overflow-visible'>
+											{user.isOnline && (
+												<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
+											)}
 
-										<AvatarImage src={user.image} className='rounded-full object-cover' />
-										<AvatarFallback>
-											<div className='animate-pulse bg-gray-tertiary w-full h-full rounded-full'></div>
-										</AvatarFallback>
-									</Avatar>
+											<AvatarImage src={user.image} className='rounded-full object-cover' />
+											<AvatarFallback>
+												<div className='animate-pulse bg-gray-tertiary w-full h-full rounded-full'></div>
+											</AvatarFallback>
+										</Avatar>
 
-									<div className='w-full'>
-										<div className='flex items-center justify-between'>
-											<h3 className='text-md font-medium'>{user.name || user?.email?.split("@")[0]}</h3>
+										<div className='flex w-full items-center justify-between'>
+											<div>
+												<h3 className='text-md font-medium'>{user.name || user?.email?.split("@")[0]}</h3>
+												<p className='text-xs text-muted-foreground'>{user.email}</p>
+											</div>
+											{selectedUsers.includes(user._id) && (
+												<span className='text-xs font-semibold text-emerald-500'>Selecionado</span>
+											)}
 										</div>
 									</div>
-								</div>
-							))}
+								))}
+							</div>
 						</div>
 						<div className='flex justify-end gap-5'>
 							<div className="mr-5">

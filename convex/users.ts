@@ -2,6 +2,7 @@ import {ConvexError, v} from "convex/values";
 import {internalMutation, query} from "./_generated/server";
 import {paginationOptsValidator} from "convex/server";
 import {UserRole} from "../types/roles";
+import {Id} from "./_generated/dataModel";
 
 export const createUser = internalMutation({
 	args: {
@@ -129,29 +130,52 @@ export const getUsers = query({
 export const pagedUsers = query({
 	args: {
 		search:  v.optional(v.string()),
+		conversationId: v.optional(v.id("conversations")),
 		paginationOpts: paginationOptsValidator,
 	},
-	handler: async (ctx, { search, paginationOpts }) => {
+	handler: async (ctx, { search, conversationId, paginationOpts }) => {
 		const identity = await ctx.auth.getUserIdentity();
 		if (!identity) {
 			throw new ConvexError("Unauthorized");
 		}
 
+		let participantsToExclude: Id<"users">[] = [];
+		if (conversationId) {
+			const conversation = await ctx.db.get(conversationId);
+			if (!conversation) {
+				throw new ConvexError("Conversation not found");
+			}
+			participantsToExclude = conversation.participants;
+		}
+
 		const excludeMe = (q: any) =>
 			q.neq(q.field("tokenIdentifier"), identity.tokenIdentifier);
+
+		const applyExclusions = (queryBuilder: any) => {
+			let filteredQuery = queryBuilder.filter(excludeMe);
+
+			if (participantsToExclude.length) {
+				for (const participantId of participantsToExclude) {
+					filteredQuery = filteredQuery.filter((q: any) =>
+						q.neq(q.field("_id"), participantId),
+					);
+				}
+			}
+
+			return filteredQuery;
+		};
 
 		if (search && search.trim() !== "") {
 			const searchParam = `"${search.trim()}"`;
 
-			return await ctx.db
+			return await applyExclusions(
+				ctx.db
 				.query("users")
-				.withSearchIndex("userSearchName", (b) => b.search("name", searchParam)) // full-text pelo índice name :contentReference[oaicite:0]{index=0}
-				.filter(excludeMe)
-				.paginate(paginationOpts);
+					.withSearchIndex("userSearchName", (b) => b.search("name", searchParam)), // full-text pelo índice name
+			).paginate(paginationOpts);
 		}
 
-		return await ctx.db.query("users")
-			.filter(excludeMe)
+		return await applyExclusions(ctx.db.query("users"))
 			//.withIndex("by_name")
 			//.order("asc")
 			.paginate(paginationOpts);

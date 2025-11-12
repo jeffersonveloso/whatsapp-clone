@@ -82,6 +82,54 @@ export const addConversationParticipants = mutation({
 	},
 });
 
+export const updateGroupInfo = mutation({
+	args: {
+		conversationId: v.id("conversations"),
+		groupName: v.optional(v.string()),
+		groupImageStorageId: v.optional(v.id("_storage")),
+		removeImage: v.optional(v.boolean()),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) throw new ConvexError("Unauthorized");
+
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_tokenIdentifier", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+			.unique();
+
+		if (!user) throw new ConvexError("User not found");
+
+		const conversation = await ctx.db.get(args.conversationId);
+		if (!conversation || !conversation.isGroup) {
+			throw new ConvexError("Group conversation not found");
+		}
+
+		const isAdmin = conversation.admins?.includes(user._id);
+		if (!isAdmin) {
+			throw new ConvexError("Only admins can update group info");
+		}
+
+		let groupImage = conversation.groupImage;
+
+		if (args.removeImage) {
+			groupImage = undefined;
+		} else if (args.groupImageStorageId) {
+			groupImage = (await ctx.storage.getUrl(args.groupImageStorageId)) ?? undefined;
+		}
+
+		await ctx.db.patch(args.conversationId, {
+			groupName: args.groupName ?? conversation.groupName,
+			groupImage,
+		});
+
+		return {
+			groupName: args.groupName ?? conversation.groupName,
+			groupImage,
+		};
+	},
+});
+
 export const updateAdmins = mutation({
 	args: {
 		conversationId: v.id("conversations"),

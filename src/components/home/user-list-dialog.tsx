@@ -184,120 +184,129 @@ const UserListDialog = () => {
 					<span>New Chat</span> <MessageSquareDiff size={16}/>
 				</button>
 			</DialogTrigger>
-			<DialogContent className="w-full !max-w-[90%] sm:!max-w-4xl p-2">
-				<DialogHeader>
-					<DialogTitle>Users</DialogTitle>
-				</DialogHeader>
+			<DialogContent className="w-full !max-w-[96vw] sm:!max-w-5xl p-0 border border-border bg-background text-foreground rounded-2xl shadow-2xl z-[130]">
+				<div className="flex max-h-[85vh] flex-col gap-5 overflow-hidden p-6 bg-card">
+					<DialogHeader className='text-center'>
+						<DialogTitle className='text-xl font-semibold'>Selecionar usuários</DialogTitle>
+						<DialogDescription>Inicie um novo chat ou crie um grupo</DialogDescription>
+					</DialogHeader>
 
-				<DialogDescription>Start a new chat</DialogDescription>
-				{renderedImage && (
-					<div className='w-16 h-16 relative mx-auto'>
-						<Image src={renderedImage} fill alt='user image' className='rounded-full object-cover' />
+					{renderedImage && (
+						<div className='relative mx-auto h-20 w-20'>
+							<Image src={renderedImage} fill alt='user image' className='rounded-full object-cover' />
+						</div>
+					)}
+					<input
+						type='file'
+						accept='image/*'
+						ref={imgRef}
+						hidden
+						onChange={handleImageChange}
+					/>
+					{selectedUsers.length > 1 && isAdmin && (
+						<div className='grid gap-3 rounded-xl border border-border/60 bg-background/60 p-4 shadow-inner'>
+							<Input
+								placeholder='Nome do grupo'
+								className='text-sm'
+								value={groupName}
+								onChange={(e) => setGroupName(e.target.value)}
+							/>
+							<Button className='flex gap-2' onClick={() => imgRef.current?.click()}>
+								<ImageIcon size={20} />
+								Enviar imagem
+							</Button>
+						</div>
+					)}
+
+					<div className='flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground'>
+						<p>
+							{selectedUsers.length} usuário(s) selecionado(s)
+						</p>
+						{selectedUsers.length > 0 && (
+							<Button variant='ghost' size='sm' onClick={() => setSelectedUsers([])}>
+								Limpar seleção
+							</Button>
+						)}
 					</div>
-				)}
-				<input
-					type='file'
-					accept='image/*'
-					ref={imgRef}
-					hidden
-					onChange={handleImageChange}
-				/>
-				{selectedUsers.length > 1 && isAdmin && (
-					<>
-						<Input
-							placeholder='Group Name'
-							className='pl-2 py-2 text-sm w-full rounded shadow-sm bg-gray-primary focus-visible:ring-transparent'
-							value={groupName}
-							onChange={(e) => setGroupName(e.target.value)}
-						/>
-						<Button className='flex gap-2' onClick={() => imgRef.current?.click()}>
-							<ImageIcon size={20} />
-							Group Image
-						</Button>
-					</>
-				)}
 
-				{/* Search */}
-				<SearchBar
-					placeholder="Search users…"
-					filterText={searchParam}
-					onFilterTextChange={handleSearchChange}
-					className="relative h-10 mx-3 flex-1"
-				/>
+					<SearchBar
+						placeholder="Buscar usuários…"
+						filterText={searchParam}
+						onFilterTextChange={handleSearchChange}
+					/>
 
-				<div
-					className='flex flex-col gap-3 overflow-auto max-h-60 border-2 rounded-md bg-gray-tertiary'
-					onScroll={handleScroll}
-				>
-					{users?.map((user) => (
-						<div
-							key={user._id}
-							className={`flex gap-3 items-center p-1 m-1 border-b-2 cursor-pointer active:scale-95 
-								transition-all ease-in-out duration-300
-							${selectedUsers.includes(user._id) ? "bg-green-primary" : ""}`}
-							onClick={() => {
-								if (!isAdmin && !selectedUsers.includes(user._id) && selectedUsers.length >= 1) {
-									toast.error("Only admins can create group chats.");
-									return;
-								}
-								if (selectedUsers.includes(user._id)) {
-									setSelectedUsers(selectedUsers.filter((id) => id !== user._id));
-								} else {
-									setSelectedUsers([...selectedUsers, user._id]);
-								}
-							}}
-						>
-							<Avatar className='overflow-visible'>
-								{user.isOnline && (
-									<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
-								)}
+					<div
+						className='flex-1 space-y-3 overflow-y-auto rounded-2xl border border-border/80 bg-muted/60 dark:bg-muted/20 p-3 shadow'
+						onScroll={handleScroll}
+					>
+						{users?.map((user) => (
+							<div
+								key={user._id}
+								className={`flex items-center gap-3 rounded-xl border border-border/50 bg-card p-3 transition hover:border-border hover:bg-card/80 dark:bg-gray-900/60 ${selectedUsers.includes(user._id) ? "ring-2 ring-emerald-500" : ""}`}
+								onClick={() => {
+									if (!isAdmin && !selectedUsers.includes(user._id) && selectedUsers.length >= 1) {
+										toast.error("Only admins can create group chats.");
+										return;
+									}
+									if (selectedUsers.includes(user._id)) {
+										setSelectedUsers(selectedUsers.filter((id) => id !== user._id));
+									} else {
+										setSelectedUsers([...selectedUsers, user._id]);
+									}
+								}}
+							>
+								<Avatar className='overflow-visible'>
+									{user.isOnline && (
+										<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
+									)}
 
-								<AvatarImage src={user.image} className='rounded-full object-cover' />
-								<AvatarFallback>
-									<div className='animate-pulse bg-gray-tertiary w-full h-full rounded-full'></div>
-								</AvatarFallback>
-							</Avatar>
+									<AvatarImage src={user.image} className='rounded-full object-cover' />
+									<AvatarFallback>
+										<div className='animate-pulse bg-gray-tertiary w-full h-full rounded-full'></div>
+									</AvatarFallback>
+								</Avatar>
 
-							<div className='w-full '>
-								<div className='flex items-center justify-between'>
-									<p className='text-md font-medium'>{user.name || user?.email?.split("@")[0]}</p>
+								<div className='flex w-full items-center justify-between'>
+									<div>
+										<p className='text-md font-medium'>{user.name || user?.email?.split("@")[0]}</p>
+										<p className='text-xs text-muted-foreground'>{user.email}</p>
+									</div>
+									{selectedUsers.includes(user._id) && (
+										<span className='text-xs font-semibold text-emerald-500'>Selecionado</span>
+									)}
 								</div>
 							</div>
-						</div>
-					))}
+						))}
 
-					{status === "LoadingMore" && (
-						<p className="text-center text-sm text-muted-foreground py-2">
-							Carregando…
-						</p>
-					)}
-				</div>
-				<div className='flex justify-end gap-5'>
-					<div className="mr-5">
+						{status === "LoadingMore" && (
+							<p className="py-2 text-center text-sm text-muted-foreground">
+								Carregando…
+							</p>
+						)}
+					</div>
+
+					<div className='flex justify-end gap-4'>
 						<Button
 							type="button"
 							variant={"destructive"}
 							onClick={() => setOpen(false)}
 						>
-							Cancel
+							Cancelar
 						</Button>
-					</div>
-					<div>
 						<Button
-						onClick={handleCreateConversation}
-						disabled={
-							selectedUsers.length === 0 ||
-							(selectedUsers.length > 1 && (!groupName || !isAdmin)) ||
-							isLoading
-						}
-					>
-						{/* spinner */}
-						{isLoading ? (
-							<div className='w-5 h-5 border-t-2 border-b-2  rounded-full animate-spin' />
-						) : (
-							"Create"
-						)}
-					</Button>
+							onClick={handleCreateConversation}
+							disabled={
+								selectedUsers.length === 0 ||
+								(selectedUsers.length > 1 && (!groupName || !isAdmin)) ||
+								isLoading
+							}
+						>
+							{isLoading ? (
+								<div className='h-5 w-5 animate-spin rounded-full border-2 border-t-transparent' />
+							) : (
+								"Criar"
+							)}
+						</Button>
 					</div>
 				</div>
 			</DialogContent>
