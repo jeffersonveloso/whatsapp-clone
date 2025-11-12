@@ -104,7 +104,8 @@ const MessageOptionsMenu = ({me, message}: ChatAvatarActionsProps) => {
             {!isMember && !fromAI && isGroup && <Ban size={16} className='text-red-500'/>}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <button className="p-2 hover:bg-gray-200 rounded-full" data-chat-options-trigger>
+                    <button className="p-2 rounded-full transition hover:bg-gray-200 dark:hover:bg-gray-700"
+                    data-chat-options-trigger>
                         <ChevronDown size={15}/>
                     </button>
                 </DropdownMenuTrigger>

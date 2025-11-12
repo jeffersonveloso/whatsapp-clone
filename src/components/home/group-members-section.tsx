@@ -83,9 +83,9 @@ const GroupMembersSection = ({
 				participants: conversation.participants.filter((id) => id !== userId),
 				admins: conversation.admins?.filter((id) => id !== userId),
 			});
-			toast.success("Usuário removido do grupo.");
+			toast.success("User removed from the group.");
 		} catch {
-			toast.error("Não foi possível remover o usuário.");
+			toast.error("The user could not be removed.");
 		}
 	};
 
@@ -138,7 +138,7 @@ const GroupMembersSection = ({
 		<section className={className}>
 			<div className='mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
 				<div>
-					<p className='text-sm font-semibold'>Membros</p>
+					<p className='text-sm font-semibold'>Member(s)</p>
 					<p className='text-xs text-muted-foreground'>
 						{members ? `${members.length} no total` : "Carregando…"}
 					</p>
@@ -154,12 +154,12 @@ const GroupMembersSection = ({
 				className='mb-3'
 			/>
 			<div
-				className='max-h-96 space-y-2 overflow-y-auto rounded-lg border border-border/80 bg-muted/60 dark:bg-muted/20 p-2 shadow'
+				className='max-h-96 space-y-4 overflow-y-auto rounded-3xl border border-border/80 bg-muted/80 dark:bg-slate-950 p-4 shadow dark:shadow-[0_8px_24px_rgba(0,0,0,0.6)]'
 				onScroll={handleScroll}
 			>
-				{!members && <p className='text-sm text-muted-foreground'>Carregando membros…</p>}
+				{!members && <p className='text-sm text-muted-foreground'>Loading members…</p>}
 				{members && members.length === 0 && (
-					<p className='text-sm text-muted-foreground'>Nenhum membro encontrado.</p>
+					<p className='text-sm text-muted-foreground'>No members found..</p>
 				)}
 				{displayedMembers.map((member) => {
 					const isAdmin = conversation.admins?.includes(member._id);
@@ -167,11 +167,11 @@ const GroupMembersSection = ({
 					return (
 						<div
 							key={member._id}
-							className='flex items-center gap-3 rounded-md border border-border/40 bg-card p-2 dark:bg-gray-900/60'
+							className='flex items-center gap-3 rounded-2xl border border-border/60 bg-card/95 dark:bg-slate-900 px-4 py-3 shadow-sm'
 						>
 							<Avatar className='overflow-visible'>
 																	{member.isOnline && (
-																		<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
+																		<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full' />
 																	)}
 							
 																	<AvatarImage src={member.image} className='rounded-full object-cover' />
@@ -184,14 +184,14 @@ const GroupMembersSection = ({
 									{member.name || member.email?.split("@")[0]}
 								</p>
 								<p className='text-xs text-muted-foreground'>
-									{isSelf ? "Você" : member.email}
+									{isSelf ? "You" : member.email}
 								</p>
 							</div>
 							<div className='flex items-center gap-2'>
 								{isAdmin && (
-									<span className='inline-flex items-center gap-1 rounded-full border border-emerald-200 px-2 py-0.5 text-xs font-semibold text-emerald-600'>
-										<Crown size={12} className='text-emerald-500' />
-										Admin
+									<span className='inline-flex items-center gap-1 rounded-full border border-emerald-200 px-2 py-0.5 text-xs font-semibold bg-emerald-700 text-emerald-100'>
+										<Crown size={12} className='text-emerald-100' />
+										Group admin
 									</span>
 								)}
 
@@ -212,7 +212,7 @@ const GroupMembersSection = ({
 											className='flex items-center gap-2'
 										>
 											<MessageSquareDiff size={14} />
-											Enviar mensagem
+											Send message
 										</DropdownMenuItem>
 										{isMeAdmin && !isSelf && (
 											<>
@@ -221,13 +221,13 @@ const GroupMembersSection = ({
 													className='flex items-center gap-2 text-destructive focus:text-destructive'
 												>
 													<LogOut size={14} />
-													Remover do grupo
+													Remove from group
 												</DropdownMenuItem>
 												<DropdownMenuSeparator />
 												<DropdownMenuItem
 													onClick={() => handleToggleAdmin(member._id, !isAdmin)}
 												>
-													{isAdmin ? "Remover como admin" : "Tornar admin"}
+													{isAdmin ? "Dismiss as admin" : "Make group admin"}
 												</DropdownMenuItem>
 											</>
 										)}

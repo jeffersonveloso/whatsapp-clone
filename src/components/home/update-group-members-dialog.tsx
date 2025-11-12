@@ -111,7 +111,7 @@ const UpdateGroupMembersDialog = ({ selectedConversation, trigger }: UpdateGroup
 									</AvatarFallback>
 								</Avatar>
 								<div>
-									<DialogTitle className='text-lg'>
+									<DialogTitle className='text-lg text-center'>
 										{selectedConversation.groupName || "Add members"}
 									</DialogTitle>
 									<DialogDescription>
@@ -124,19 +124,19 @@ const UpdateGroupMembersDialog = ({ selectedConversation, trigger }: UpdateGroup
 						<div className='flex flex-col gap-4 rounded-xl border border-border/60 bg-background/60 p-4 shadow-inner'>
 							<div className='flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground'>
 								<p>
-									Selecione usuários para adicionar ao grupo.{" "}
+									Select users to add to the group..{" "}
 									<span className='font-semibold text-foreground'>
 										{selectedUsers.length} selecionado(s)
 									</span>
 								</p>
 								{selectedUsers.length > 0 && (
 									<Button variant='ghost' size='sm' onClick={() => setSelectedUsers([])}>
-										Limpar seleção
+										Clear selection
 									</Button>
 								)}
 							</div>
 							<SearchBar
-								placeholder="Pesquisar usuários…"
+								placeholder="Search users…"
 								filterText={searchParam}
 								onFilterTextChange={handleSearchChange}
 							/>
@@ -167,7 +167,7 @@ const UpdateGroupMembersDialog = ({ selectedConversation, trigger }: UpdateGroup
 									>
 										<Avatar className='overflow-visible'>
 											{user.isOnline && (
-												<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
+												<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full' />
 											)}
 
 											<AvatarImage src={user.image} className='rounded-full object-cover' />
@@ -182,7 +182,7 @@ const UpdateGroupMembersDialog = ({ selectedConversation, trigger }: UpdateGroup
 												<p className='text-xs text-muted-foreground'>{user.email}</p>
 											</div>
 											{selectedUsers.includes(user._id) && (
-												<span className='text-xs font-semibold text-emerald-500'>Selecionado</span>
+												<span className='text-xs font-semibold text-emerald-500'>Selected</span>
 											)}
 										</div>
 									</div>

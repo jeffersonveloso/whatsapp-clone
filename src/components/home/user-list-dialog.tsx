@@ -187,8 +187,8 @@ const UserListDialog = () => {
 			<DialogContent className="w-full !max-w-[96vw] sm:!max-w-5xl p-0 border border-border bg-background text-foreground rounded-2xl shadow-2xl z-[130]">
 				<div className="flex max-h-[85vh] flex-col gap-5 overflow-hidden p-6 bg-card">
 					<DialogHeader className='text-center'>
-						<DialogTitle className='text-xl font-semibold'>Selecionar usuários</DialogTitle>
-						<DialogDescription>Inicie um novo chat ou crie um grupo</DialogDescription>
+						<DialogTitle className='text-xl font-semibold'>Select users</DialogTitle>
+						<DialogDescription>Start a new chat or create a group.</DialogDescription>
 					</DialogHeader>
 
 					{renderedImage && (
@@ -206,31 +206,31 @@ const UserListDialog = () => {
 					{selectedUsers.length > 1 && isAdmin && (
 						<div className='grid gap-3 rounded-xl border border-border/60 bg-background/60 p-4 shadow-inner'>
 							<Input
-								placeholder='Nome do grupo'
+								placeholder='Group name'
 								className='text-sm'
 								value={groupName}
 								onChange={(e) => setGroupName(e.target.value)}
 							/>
 							<Button className='flex gap-2' onClick={() => imgRef.current?.click()}>
 								<ImageIcon size={20} />
-								Enviar imagem
+								Upload image
 							</Button>
 						</div>
 					)}
 
 					<div className='flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground'>
 						<p>
-							{selectedUsers.length} usuário(s) selecionado(s)
+							{selectedUsers.length} user(s) selected(s)
 						</p>
 						{selectedUsers.length > 0 && (
 							<Button variant='ghost' size='sm' onClick={() => setSelectedUsers([])}>
-								Limpar seleção
+								Clear selection
 							</Button>
 						)}
 					</div>
 
 					<SearchBar
-						placeholder="Buscar usuários…"
+						placeholder="Search users…"
 						filterText={searchParam}
 						onFilterTextChange={handleSearchChange}
 					/>
@@ -257,7 +257,7 @@ const UserListDialog = () => {
 							>
 								<Avatar className='overflow-visible'>
 									{user.isOnline && (
-										<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-foreground' />
+										<div className='absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full' />
 									)}
 
 									<AvatarImage src={user.image} className='rounded-full object-cover' />
@@ -272,7 +272,7 @@ const UserListDialog = () => {
 										<p className='text-xs text-muted-foreground'>{user.email}</p>
 									</div>
 									{selectedUsers.includes(user._id) && (
-										<span className='text-xs font-semibold text-emerald-500'>Selecionado</span>
+										<span className='text-xs font-semibold text-emerald-500'>Selected</span>
 									)}
 								</div>
 							</div>
@@ -280,7 +280,7 @@ const UserListDialog = () => {
 
 						{status === "LoadingMore" && (
 							<p className="py-2 text-center text-sm text-muted-foreground">
-								Carregando…
+								Loading…
 							</p>
 						)}
 					</div>
@@ -291,7 +291,7 @@ const UserListDialog = () => {
 							variant={"destructive"}
 							onClick={() => setOpen(false)}
 						>
-							Cancelar
+							Cancel
 						</Button>
 						<Button
 							onClick={handleCreateConversation}
@@ -304,7 +304,7 @@ const UserListDialog = () => {
 							{isLoading ? (
 								<div className='h-5 w-5 animate-spin rounded-full border-2 border-t-transparent' />
 							) : (
-								"Criar"
+								"Create"
 							)}
 						</Button>
 					</div>

@@ -54,7 +54,7 @@ const RightPanel = () => {
 										onClick={openGroupInfo}
 										className='text-xs text-muted-foreground text-left hover:text-foreground transition'
 									>
-										Ver informações do grupo
+										Click here for group info
 									</button>
 								)}
 							</div>

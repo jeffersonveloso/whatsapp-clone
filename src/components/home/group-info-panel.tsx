@@ -62,7 +62,7 @@ const GroupInfoPanel = () => {
 		if (!file) return;
 
 		if (!file.type.startsWith("image/")) {
-			toast.error("Selecione uma imagem válida.");
+			toast.error("Select a valid image.");
 			event.target.value = "";
 			return;
 		}
@@ -102,7 +102,7 @@ const GroupInfoPanel = () => {
 					body: selectedImage,
 				});
 
-				if (!uploadResult.ok) throw new Error("Falha no upload da imagem.");
+				if (!uploadResult.ok) throw new Error("Image upload failed.");
 
 				const uploadResponse = await uploadResult.json();
 				storageId = uploadResponse.storageId;
@@ -123,10 +123,10 @@ const GroupInfoPanel = () => {
 
 			setSelectedImage(null);
 			setRemoveImage(false);
-			toast.success("Informações do grupo atualizadas!");
+			toast.success("Group information updated!");
 		} catch (error) {
 			console.error(error);
-			toast.error("Não foi possível atualizar o grupo.");
+			toast.error("The group could not be updated.");
 		} finally {
 			setIsSaving(false);
 		}
@@ -138,12 +138,12 @@ const GroupInfoPanel = () => {
 		if (!selectedConversation || !me?._id) return;
 		try {
 			await kickUser({ conversationId: selectedConversation._id, userId: me._id });
-			toast.success("Você saiu do grupo.");
+			toast.success("You left the group.");
 			setSelectedConversation(null);
 			close();
 		} catch (error) {
 			console.error(error);
-			toast.error("Não foi possível sair do grupo.");
+			toast.error("It was not possible to leave the group.");
 		}
 	};
 
@@ -166,7 +166,7 @@ const GroupInfoPanel = () => {
 			>
 				<header className='flex items-center justify-between border-b border-border/60 px-5 py-4'>
 					<div>
-						<p className='text-xs uppercase tracking-wide text-muted-foreground'>Infos do grupo</p>
+						<p className='text-xs uppercase tracking-wide text-muted-foreground'>Group info</p>
 						<h2 className='text-xl font-semibold'>
 							{selectedConversation?.groupName || "Grupo"}
 						</h2>
@@ -212,7 +212,7 @@ const GroupInfoPanel = () => {
 											onClick={() => fileInputRef.current?.click()}
 										>
 											<Camera size={16} />
-											Alterar foto
+											Change photo
 										</Button>
 										<Button
 											variant='ghost'
@@ -228,7 +228,7 @@ const GroupInfoPanel = () => {
 
 							<div className='w-full space-y-2'>
 								<label className='text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
-									Nome do grupo
+									Group name
 								</label>
 								<Input
 									value={groupName}
@@ -237,22 +237,23 @@ const GroupInfoPanel = () => {
 										setGroupName(event.target.value);
 									}}
 									disabled={!isAdmin}
-									placeholder='Digite o nome do grupo'
+									placeholder='Enter the group name.'
 									className='font-medium'
 								/>
 								<div className='flex items-center justify-between text-xs text-muted-foreground'>
 									<span>{`${groupName.length}/${MAX_NAME_LENGTH}`}</span>
-									<span>Grupo • {totalMembers} membro(s)</span>
+									<span>Group • {totalMembers} member(s)</span>
 								</div>
 							</div>
 
 							{isAdmin && (
 								<Button
 									className='w-full'
+									variant='outline'
 									disabled={!canSave || isSaving}
 									onClick={handleSave}
 								>
-									{isSaving ? "Salvando..." : "Salvar alterações"}
+									{isSaving ? "Saving..." : "Save changes"}
 								</Button>
 							)}
 						</section>
@@ -268,7 +269,7 @@ const GroupInfoPanel = () => {
 											trigger={
 												<Button variant='outline' size='sm'>
 													<UserPlus2 size={16} />
-													Adicionar
+													Add
 												</Button>
 											}
 										/>
@@ -284,7 +285,7 @@ const GroupInfoPanel = () => {
 							onClick={handleLeaveGroup}
 						>
 							<LogOut size={16} />
-							Sair do grupo
+							Leave the group
 						</Button>
 					</div>
 				</div>

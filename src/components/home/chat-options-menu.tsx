@@ -76,7 +76,7 @@ const ChatOptionsMenu: React.FC<ChatOptionsMenuProps> = ({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <button
-                        className="p-2 hover:bg-gray-200 rounded-full"
+                        className="p-2 rounded-full transition hover:bg-gray-200 dark:hover:bg-gray-700"
                         data-chat-options-trigger
                     >
                         <ChevronDown size={15}/>
