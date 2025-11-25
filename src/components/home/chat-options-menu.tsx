@@ -113,7 +113,8 @@ const ChatOptionsMenu: React.FC<ChatOptionsMenuProps> = ({
 
             {/* === Modal de confirmação === */}
             <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-                <DialogContent className="max-w-sm">
+                <DialogContent className="w-full !max-w-[96vw] sm:!max-w-5xl p-0 bg-background text-foreground rounded-2xl shadow-2xl z-[130]">
+                    <div className="flex max-h-[85vh] flex-col gap-5 overflow-hidden p-6 bg-card">
                     <DialogHeader>
                         <DialogTitle>
                             {conversation.isGroup
@@ -126,7 +127,7 @@ const ChatOptionsMenu: React.FC<ChatOptionsMenuProps> = ({
                             This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="flex justify-end space-x-2">
+                    <DialogFooter className="flex gap-1">
                         <Button
                             variant="outline"
                             onClick={() => setIsConfirmOpen(false)}
@@ -137,6 +138,7 @@ const ChatOptionsMenu: React.FC<ChatOptionsMenuProps> = ({
                             Delete
                         </Button>
                     </DialogFooter>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useConversationStore } from "@/store/chat-store";
+import { useGroupInfoStore } from "@/store/ui-store";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +12,7 @@ import toast from "react-hot-toast";
 import SearchBar from "@/components/home/search-bar";
 import useDebounce from "@/hooks/useDebouce";
 import { Conversation } from "@/store/chat-store";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type GroupMembersSectionProps = {
 	conversation: Conversation;
@@ -34,6 +36,23 @@ const GroupMembersSection = ({
 	);
 
 	const { setSelectedConversation } = useConversationStore();
+	const { close: closeGroupInfo } = useGroupInfoStore();
+	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	const setConversationParam = useCallback(
+		(conversationId: string | null) => {
+			const currentParams = new URLSearchParams(searchParams?.toString() ?? "");
+			if (conversationId) {
+				currentParams.set("conversationId", conversationId);
+			} else {
+				currentParams.delete("conversationId");
+			}
+			const query = currentParams.toString();
+			router.replace(query ? `/?${query}` : "/", { scroll: false });
+		},
+		[router, searchParams],
+	);
 
 	const kickUser = useMutation(api.conversations.kickUser);
 	const upsertConversation = useMutation(api.conversations.upsertConversation);
@@ -120,14 +139,17 @@ const GroupMembersSection = ({
 				isGroup: false,
 				participants: [me._id, userId],
 			});
+			const target = members?.find((m) => m._id === userId);
 			setSelectedConversation({
 				_id: conversationId,
 				participants: [me._id, userId],
 				isGroup: false,
-				image: members?.find((m) => m._id === userId)?.image,
-				name: members?.find((m) => m._id === userId)?.name,
-				isOnline: members?.find((m) => m._id === userId)?.isOnline,
+				image: target?.image,
+				name: target?.name,
+				isOnline: target?.isOnline,
 			});
+			setConversationParam(conversationId);
+			closeGroupInfo();
 		} catch (error) {
 			console.error(error);
 			toast.error("Não foi possível iniciar a conversa.");

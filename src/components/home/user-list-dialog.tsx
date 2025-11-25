@@ -184,7 +184,7 @@ const UserListDialog = () => {
 					<span>New Chat</span> <MessageSquareDiff size={16}/>
 				</button>
 			</DialogTrigger>
-			<DialogContent className="w-full !max-w-[96vw] sm:!max-w-5xl p-0 border border-border bg-background text-foreground rounded-2xl shadow-2xl z-[130]">
+			<DialogContent className="w-full !max-w-[96vw] sm:!max-w-5xl p-0 bg-background text-foreground rounded-2xl shadow-2xl z-[130]">
 				<div className="flex max-h-[85vh] flex-col gap-5 overflow-hidden p-6 bg-card">
 					<DialogHeader className='text-center'>
 						<DialogTitle className='text-xl font-semibold'>Select users</DialogTitle>

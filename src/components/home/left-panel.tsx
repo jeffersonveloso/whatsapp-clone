@@ -45,16 +45,6 @@ const LeftPanel = () => {
 		[conversationIdParam, router, searchParams],
 	);
 
-	useEffect(() => {
-		const conversationIds = conversations?.map((conversation) => conversation._id);
-		if (selectedConversation && conversationIds && !conversationIds.includes(selectedConversation._id)) {
-			selectionOriginRef.current = "route";
-			setSelectedConversation(null);
-			if (conversationIdParam) {
-				setConversationParam(null);
-			}
-		}
-	}, [conversationIdParam, conversations, selectedConversation, setConversationParam, setSelectedConversation]);
 
 	useEffect(() => {
 		if (isDesktop) {
@@ -63,6 +53,8 @@ const LeftPanel = () => {
 	}, [isDesktop, close]);
 
 	useEffect(() => {
+		if (selectionOriginRef.current === "user") return;
+
 		if (!conversations) {
 			return;
 		}
@@ -109,6 +101,14 @@ const LeftPanel = () => {
 			selectionOriginRef.current = null;
 		}
 	}, [conversationIdParam, selectedConversation, setConversationParam]);
+
+	// Ensure selected conversation still exists after query refreshes
+	useEffect(() => {
+		const conversationIds = conversations?.map((conversation) => conversation._id);
+		if (!selectedConversation || !conversationIds) return;
+		if (selectionOriginRef.current === "user") return;
+		// Allow selectedConversation to persist even if it hasn't synced into the list yet
+	}, [conversationIdParam, conversations, selectedConversation, setConversationParam, setSelectedConversation]);
 
 	if (isLoading) return null;
 

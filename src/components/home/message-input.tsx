@@ -1,5 +1,5 @@
 import {Laugh, Mic, Send, SendHorizonal, X} from "lucide-react";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import {Button} from "../ui/button";
 import {useMutation, useQuery} from "convex/react";
 import {api} from "../../../convex/_generated/api";
@@ -27,6 +27,20 @@ const MessageInput = () => {
     const {ref, isComponentVisible, setIsComponentVisible} = useComponentVisible(false);
 
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    const focusComposer = useCallback(() => {
+        const node = textareaRef.current;
+        if (!node) return;
+        node.focus({ preventScroll: true });
+        const setCaretToEnd = () => {
+            const len = node.value.length;
+            node.selectionStart = len;
+            node.selectionEnd = len;
+        };
+        setCaretToEnd();
+        requestAnimationFrame(setCaretToEnd);
+        setTimeout(setCaretToEnd, 50);
+    }, []);
 
     const me = useQuery(api.users.getMe);
     const sendTextMsg = useMutation(api.messages.sendTextMessage);
@@ -146,14 +160,16 @@ const MessageInput = () => {
 
             if (isMobileKeyboard) {
                 event.preventDefault();
-                const {selectionStart, selectionEnd, value} = event.currentTarget;
+                const target = event.currentTarget;
+                const {selectionStart, selectionEnd, value} = target;
                 const newValue = `${value.slice(0, selectionStart)}\n${value.slice(selectionEnd)}`;
-                event.currentTarget.value = newValue;
+                target.value = newValue;
                 setMsgText(newValue);
                 requestAnimationFrame(() => {
+                    if (!target) return;
                     const cursor = selectionStart + 1;
-                    event.currentTarget.selectionStart = cursor;
-                    event.currentTarget.selectionEnd = cursor;
+                    target.selectionStart = cursor;
+                    target.selectionEnd = cursor;
                     adjustTextareaSize();
                 });
                 return;
@@ -168,6 +184,18 @@ const MessageInput = () => {
     useEffect(() => {
         adjustTextareaSize();
     }, [adjustTextareaSize, msgText]);
+
+    // Focus input when entering reply mode; run a few times to avoid race with layout
+    useLayoutEffect(() => {
+        if (!replyToMessage) return;
+        focusComposer();
+        const t1 = setTimeout(focusComposer, 60);
+        const t2 = setTimeout(focusComposer, 150);
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+        };
+    }, [replyToMessage, focusComposer]);
 
     return (
         <div className='bg-gray-primary p-2 flex gap-4 items-center shrink-0'>
@@ -203,6 +231,11 @@ const MessageInput = () => {
                         onChange={handleChange}
                         onKeyDown={handleKeyDown}
                         autoComplete='off'
+                        autoFocus
+                        onBlur={() => {
+                            if (!replyToMessage) return;
+                            requestAnimationFrame(() => focusComposer());
+                        }}
                         style={{overflow: "hidden"}}
                     />
                 </div>

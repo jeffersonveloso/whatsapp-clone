@@ -96,7 +96,7 @@ const UpdateGroupMembersDialog = ({ selectedConversation, trigger }: UpdateGroup
 					</p>
 				)}
 			</DialogTrigger>
-			<DialogContent className="w-full !max-w-[96vw] sm:!max-w-5xl p-0 border border-border bg-background text-foreground rounded-2xl shadow-2xl z-[130]">
+			<DialogContent className="w-full !max-w-[96vw] sm:!max-w-5xl p-0 bg-background text-foreground rounded-2xl shadow-2xl z-[130]">
 					<div className="flex max-h-[85vh] flex-col gap-5 overflow-hidden p-6 bg-card">
 						<DialogHeader className='relative pb-2 text-center'>
 							<DialogClose ref={dialogCloseRef} className='absolute right-0 top-0' />
